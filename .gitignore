@@ -3,3 +3,7 @@
 # Ignore data files 
 *.mat
 *.h5
+
+# Ignore output files
+Videos/
+Outputs/

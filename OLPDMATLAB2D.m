@@ -13,21 +13,29 @@
 function OLPDMATLAB2D(InputDeck, DatasetFile, ChunkSize, ChunkIndex)
     numSamples = length(h5read(DatasetFile, "/u/1/indices"));
     
+    effectiveChunkSize = numSamples;
     if nargin == 2
-        ChunkSize = numSamples;
-        ChunkIndex = 1;
-    end
+        chunkFile = DatasetFile;
+    else
+        offset = ChunkSize * (ChunkIndex - 1);
+        if offset >= numSamples
+            error("Chunk index too large for dataset size");
+        end
+        effectiveChunkSize = min(ChunkSize, numSamples - offset);
 
-    offset = ChunkSize * (ChunkIndex - 1);
-    if offset >= numSamples
-        error("Chunk index too large for dataset size");
-    end
+        cd('InputFiles/')
+        run(InputDeck);
+        cd('..');
 
-    effectiveChunkSize = min(ChunkSize, numSamples - offset);
+        chunkFile = sprintf("../%s.%d.ol.h5", DatasetFile, ChunkIndex);
+        fprintf("Creating temporary chunk dataset at %s\n", chunkFile);
+        cd('Source');
+        CreateOLPDDataset(chunkFile, GridFile, effectiveChunkSize);
+        cd('..');
+        chunkFile = sprintf("%s.%d.ol.h5", DatasetFile, ChunkIndex);
+    end
     
-    for irel = 1:effectiveChunkSize
-        index = offset + irel;
-
+    for index = 1:effectiveChunkSize
         % Close all figures
         close all
     
@@ -54,6 +62,6 @@ function OLPDMATLAB2D(InputDeck, DatasetFile, ChunkSize, ChunkIndex)
         
         uOut = [vInitial, wInitial];  % (numNodes, 2)
         vOut = [v, w];  % (numNodes, 2)
-        WriteOLPDSample(DatasetFile, index, uOut, vOut);
+        WriteOLPDSample(chunkFile, index, uOut, vOut);
     end
 end
