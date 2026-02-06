@@ -218,6 +218,9 @@ tic
 v = vofunc(xx,yy);   % x-component of initial displacement
 w = wofunc(xx,yy);   % y-component of initial displacement
 
+% Store a copy of the initial displacements to avoid having to recompute
+vInitial = v;
+wInitial = w;
 
 % Compute initial velocity for all nodes
 Vv = Vvofunc(xx,yy); % x-component of initial velocity
