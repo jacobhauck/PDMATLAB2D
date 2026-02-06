@@ -82,7 +82,9 @@ if exist('GridFile','var')
         fprintf('Load grid and neighbor list ..................... = %f (sec) \n',toc)
 
         % Flag for Rectangular Domain Uniform Grid (RDUG)
-        flag_RDUG = 0;
+        if ~exist('flag_RDUG', 'var')
+            flag_RDUG = 0;
+        end
 
         % ---------------------------------
         %        Check grid inputs
@@ -146,6 +148,12 @@ else
 
     tic
     [u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA] = NeighborList(Nx,Ny,xx,yy,xx1,yy1,M,del,dx,dy,VV,omega,AlgName,flag_RDUG);
+
+    if exist('flag_SaveGrid', 'var')
+        if flag_SaveGrid == 1
+            save(GridFileOut, "xx","yy","u_NA","IF_NA","V_NA","r_hat_NA","x_hat_NA","y_hat_NA", "flag_RDUG");
+        end
+    end
     fprintf('Generate neighbor list .......................... = %f (sec)\n',toc)
 
 end
@@ -209,6 +217,7 @@ tic
 % Compute initial displacement for all nodes
 v = vofunc(xx,yy);   % x-component of initial displacement
 w = wofunc(xx,yy);   % y-component of initial displacement
+
 
 % Compute initial velocity for all nodes
 Vv = Vvofunc(xx,yy); % x-component of initial velocity
