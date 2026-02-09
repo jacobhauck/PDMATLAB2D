@@ -21,7 +21,7 @@ done
 wait
 
 echo "Merging dataset chunks"
-matlab -batch "MergeOLPDChunks('$OUTPUT_FILE', '$CHUNK_SIZE')"
+matlab -batch "MergeOLPDChunks('$OUTPUT_FILE', $CHUNK_SIZE)"
 
 echo "Removing temporary chunk files"
 rm $OUTPUT_FILE.*.ol.h5
