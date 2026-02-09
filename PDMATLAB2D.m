@@ -23,15 +23,11 @@ function PDMATLAB2D(InputDeck)
 
     % Print simulation title
     fprintf(' ================================================================ \n')
-    fprintf('                          %s \n',InputDeck)
+    fprintf('                          %s \n', InputDeck)
     fprintf(' ================================================================ \n\n')
 
     % Read input deck for specific simulation problem
-    cd('InputFiles/')
-    run(InputDeck);
+    run(['InputFiles/', InputDeck]);
 
     % Run Main script
-    cd('../Source/')
-    Main
- 
-    cd .. 
+    run(['Source/', Main]);

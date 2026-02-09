@@ -23,43 +23,23 @@ function OLPDMATLAB2D(InputDeck, DatasetFile, ChunkSize, ChunkIndex)
         end
         effectiveChunkSize = min(ChunkSize, numSamples - offset);
 
-        cd('InputFiles/')
-        run(InputDeck);
-        cd('..');
+        run(['InputFiles/', InputDeck]);
 
-        chunkFile = sprintf("../%s.%d.ol.h5", DatasetFile, ChunkIndex);
-        fprintf("Creating temporary chunk dataset at %s\n", chunkFile);
-        cd('Source');
-        CreateOLPDDataset(chunkFile, GridFile, effectiveChunkSize);
-        cd('..');
         chunkFile = sprintf("%s.%d.ol.h5", DatasetFile, ChunkIndex);
+        fprintf("Creating temporary chunk dataset at %s\n", chunkFile);
+        CreateOLPDDataset(chunkFile, GridFile, effectiveChunkSize);
     end
     
     for index = 1:effectiveChunkSize
-        % Close all figures
-        close all
-    
-        % Clear variables from memory
-        clearvars a* -except InputDeck
-    
-        % Clear command window
-        clc
-    
         % Print simulation title
         fprintf(' ================================================================ \n')
-        fprintf('                          %s \n',InputDeck)
+        fprintf('                          %s \n', InputDeck)
         fprintf(' ================================================================ \n\n')
     
-        % Read input deck for specific simulation problem
-        cd('InputFiles/')
-        run(InputDeck);
-    
         % Run Main script
-        cd('../Source/')
-        Main
-     
-        cd .. 
+        run(['Source/', Main]);
         
+        % Save initial and final states
         uOut = [vInitial, wInitial];  % (numNodes, 2)
         vOut = [v, w];  % (numNodes, 2)
         WriteOLPDSample(chunkFile, index, uOut, vOut);

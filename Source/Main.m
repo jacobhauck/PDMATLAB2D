@@ -15,8 +15,8 @@
 % ========================================================================
 
 % Check if simulation output directory exists and create it otherwise
-if ~exist(['../Outputs/' InputDeck], 'dir')
-    mkdir(['../Outputs/' InputDeck])
+if ~exist(['Outputs/' InputDeck], 'dir')
+    mkdir(['Outputs/' InputDeck])
 end
 
 % ------------------------------------------------------------------------
@@ -30,8 +30,8 @@ if flag_DynamicPlotting == 1
 
         if flag_video == 1
             % Check if video output directory exists and create it otherwise
-            if ~exist(['../Videos/' InputDeck], 'dir')
-                mkdir(['../Videos/' InputDeck])
+            if ~exist(['Videos/' InputDeck], 'dir')
+                mkdir(['Videos/' InputDeck])
             end
 
             % Find number of plots: a video is generated for each plot
@@ -46,7 +46,7 @@ if flag_DynamicPlotting == 1
                 field_name = PlotSettings{nplot,1};
 
                 % Video file name
-                video_filename = ['../Videos/' InputDeck '/' field_name '.mp4'];
+                video_filename = ['Videos/' InputDeck '/' field_name '.mp4'];
 
                 % Open video file
                 vidfile(nplot) = VideoWriter(video_filename,'MPEG-4');
@@ -453,7 +453,7 @@ elseif flag_FinalPlots == 1
         end
 
         % Save figure
-        filename = ['../Outputs/' InputDeck '/' cnodes_name '.eps'];
+        filename = ['Outputs/' InputDeck '/' cnodes_name '.eps'];
         saveas(gcf,filename,'epsc');
 
         if flag_DynamicPlotting == 1
