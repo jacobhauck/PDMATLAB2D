@@ -30,4 +30,4 @@ function PDMATLAB2D(InputDeck)
     run(['InputFiles/', InputDeck]);
 
     % Run Main script
-    run(['Source/', Main]);
+    run('Source/Main');

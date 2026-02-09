@@ -24,7 +24,7 @@ function OLPDMATLAB2D(InputDeck, DatasetFile, ChunkSize, ChunkIndex)
         effectiveChunkSize = min(ChunkSize, numSamples - offset);
 
         run(['InputFiles/', InputDeck]);
-
+        fprintf("Using grid file %s\n", GridFile);
         chunkFile = sprintf("%s.%d.ol.h5", DatasetFile, ChunkIndex);
         fprintf("Creating temporary chunk dataset at %s\n", chunkFile);
         CreateOLPDDataset(chunkFile, GridFile, effectiveChunkSize);
@@ -37,7 +37,7 @@ function OLPDMATLAB2D(InputDeck, DatasetFile, ChunkSize, ChunkIndex)
         fprintf(' ================================================================ \n\n')
     
         % Run Main script
-        run(['Source/', Main]);
+        run('Source/Main');
         
         % Save initial and final states
         uOut = [vInitial, wInitial];  % (numNodes, 2)

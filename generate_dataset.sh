@@ -1,6 +1,6 @@
 # Configuration variables
 OUTPUT_FILE=test.ol.h5
-GRID_FILE=Source/GridFile1.mat
+GRID_FILE=GridFile1.mat
 DATASET_SIZE=5
 NUM_CHUNKS=2
 CHUNK_SIZE=$(( (DATASET_SIZE + NUM_CHUNKS - 1) / NUM_CHUNKS ))
