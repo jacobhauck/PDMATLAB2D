@@ -31,11 +31,7 @@ function OLPDMATLAB2D(InputDeck, DatasetFile, ChunkSize, ChunkIndex)
     end
     
     for index = 1:effectiveChunkSize
-        % Print simulation title
-        fprintf(' ================================================================ \n')
-        fprintf('                          %s \n', InputDeck)
-        fprintf(' ================================================================ \n\n')
-    
+        fprintf("Running chunk %d sample %d/%d", ChunkIndex, index, effectiveChunkSize);
         % Run Main script
         run('Source/Main');
         

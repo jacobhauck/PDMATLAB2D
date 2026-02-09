@@ -124,7 +124,7 @@ flag_DynamicPlotting = 0;
 DynamicPlotFrequency = 10; % Plot every 10 time steps (beginning from the first one)
 
 % Frequency of time-integration step display
-TimeStepDisplayFrequency = 4;
+TimeStepDisplayFrequency = 50000;  % don't show time-step updates
 
 % Flag for plotting at final time
 flag_FinalPlots = 0;
