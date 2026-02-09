@@ -102,6 +102,7 @@ amplitude_fn = @(i, j) alpha * (beta + i.^2 + j.^2) .^ (-gamma / 2);
 
 % Initial displacement functions
 % x-component of initial displacement
+addpath("..");
 voref = GRF2D(num_modes, amplitude_fn);  
 vofunc = @(x, y) voref((x - Xo) / (Xn - Xo), (y - Yo) / (Yn - Yo));
 % y-component of initial displacement
