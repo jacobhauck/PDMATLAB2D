@@ -31,7 +31,7 @@ function OLPDMATLAB2D(InputDeck, DatasetFile, ChunkSize, ChunkIndex)
     end
     
     for index = 1:effectiveChunkSize
-        fprintf("Running chunk %d sample %d/%d", ChunkIndex, index, effectiveChunkSize);
+        fprintf("Running chunk %d sample %d/%d\n", ChunkIndex, index, effectiveChunkSize);
         % Run Main script
         run('Source/Main');
         
