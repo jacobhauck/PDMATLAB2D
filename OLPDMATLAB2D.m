@@ -10,7 +10,7 @@
 % SPDX-License-Identifier: BSD-3-Clause                                    
 % ========================================================================
 
-function OLPDMATLAB2D(InputDeck, DatasetFile, ChunkSize, ChunkIndex)
+function OLPDMATLAB2D(InputDeck, DatasetFile, ChunkSize, ChunkIndex, Seed)
     numSamples = length(h5read(DatasetFile, "/u/1/indices"));
     
     effectiveChunkSize = numSamples;
@@ -23,15 +23,30 @@ function OLPDMATLAB2D(InputDeck, DatasetFile, ChunkSize, ChunkIndex)
         end
         effectiveChunkSize = min(ChunkSize, numSamples - offset);
 
+        if effectiveChunkSize < numSamples
+            fprintf("Chunk %d: initializing independent stream of random numbers\n", ChunkIndex);
+            numChunks = idivide(int64(numSamples + ChunkSize - 1), int64(ChunkSize));
+            streams = cell(1, numChunks);
+            % Create full set of streams; with a fixed seed, this is
+            % deterministic across all chunks. Then take the stream for the
+            % current ChunkIndex
+            [streams{:}] = RandStream.create("mrg32k3a", "NumStreams", numChunks, "Seed", Seed);
+            RandStream.setGlobalStream(streams{ChunkIndex});
+        end
+
         run(['InputFiles/', InputDeck]);
-        fprintf("Using grid file %s\n", GridFile);
+        fprintf("Chunk %d: using grid file %s\n", ChunkIndex, GridFile);
         chunkFile = sprintf("%s.%d.ol.h5", DatasetFile, ChunkIndex);
-        fprintf("Creating temporary chunk dataset at %s\n", chunkFile);
+        fprintf("Chunk %d: creating temporary chunk dataset at %s\n", ChunkIndex, chunkFile);
         CreateOLPDDataset(chunkFile, GridFile, effectiveChunkSize);
     end
     
     for index = 1:effectiveChunkSize
-        fprintf("Running chunk %d sample %d/%d\n", ChunkIndex, index, effectiveChunkSize);
+        fprintf("Chunk %d: running sample %d/%d\n", ChunkIndex, index, effectiveChunkSize);
+        
+        % Generate initial condition
+        run(['InputFiles/', InputDeck]);
+
         % Run Main script
         run('Source/Main');
         
