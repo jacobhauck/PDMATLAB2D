@@ -3,6 +3,7 @@ OUTPUT_FILE=test.ol.h5
 GRID_FILE=GridFile1.mat
 DATASET_SIZE=5
 NUM_CHUNKS=2
+RANDOM_SEED=2026
 CHUNK_SIZE=$(( (DATASET_SIZE + NUM_CHUNKS - 1) / NUM_CHUNKS ))
 INPUT_DECK=RandomWavePropagation
 
@@ -14,7 +15,7 @@ i=1
 total_data=0
 while (( total_data < DATASET_SIZE )); do
     echo "Dispatching chunk " $i
-    matlab -batch "OLPDMATLAB2D('$INPUT_DECK', '$OUTPUT_FILE', $CHUNK_SIZE, $i)" &
+    matlab -batch "OLPDMATLAB2D('$INPUT_DECK', '$OUTPUT_FILE', $CHUNK_SIZE, $i, $RANDOM_SEED)" &
     i=$((i+1))
     total_data=$((total_data + CHUNK_SIZE))
 done
