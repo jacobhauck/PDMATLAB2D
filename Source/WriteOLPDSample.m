@@ -19,14 +19,13 @@
 % index, which is separately handled by CreateOLPDDataset)
 
 function WriteOLPDSample(DatasetFile, Index, u, v)
-    numNodes = size(u, 1);
-    if numNodes ~= size(v, 1)
-        error("Invalid data: numNodes is not the same for u and v");
-    end
-
-    uData = single(reshape(u', 2, numNodes, 1));  % (2, numNodes, 1)
-    h5write(DatasetFile, "/u/1/u", uData, [1, 1, Index], [2, numNodes, 1]);
-
-    vData = single(reshape(v', 2, numNodes, 1));  % (2, numNodes, 1)
-    h5write(DatasetFile, "/v/1/v", vData, [1, 1, Index], [2, numNodes, 1]);
+    uNumNodes = size(u, 1);
+    uDOut = size(u, 2);
+    uData = single(reshape(u', uDOut, numNodes, 1));  % (uDOut, uNumNodes, 1)
+    h5write(DatasetFile, "/u/1/u", uData, [1, 1, Index], [uDOut, uNumNodes, 1]);
+    
+    vNumNodes = size(u, 1);
+    vDOut = size(v, 2);
+    vData = single(reshape(v', vDOut, numNodes, 1));  % (vDOut, vNumNodes, 1)
+    h5write(DatasetFile, "/v/1/v", vData, [1, 1, Index], [vDOut, vNumNodes, 1]);
 end
