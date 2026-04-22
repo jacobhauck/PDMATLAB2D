@@ -1,4 +1,4 @@
-function GenerateDataset(outputFile, datasetSize, numChunks, baseSimulation, simulator)
+function GenerateDataset(outputFile, datasetSize, numChunks, baseSimulation, x, y, uDOut, vDOut, generator)
     minChunkSize = floor(datasetSize / numChunks);
     numExtras = mod(datasetSize, numChunks);
 
@@ -6,18 +6,20 @@ function GenerateDataset(outputFile, datasetSize, numChunks, baseSimulation, sim
     CreateOLPDDataset(outputFile, simulator.x, simulator.y, simulator.uDOut, simulator.vDOut, datasetSize);
     
     fprintf("Generating data with %d chunks of size %d\n", numChunks, minChunkSize);
+    stream = cell(numChunks);
+    [stream{:}] = RandStream.create("mrg32k3a", "NumStreams", numChunks);
     parfor i=1:numChunks
         ChunkSize = minChunkSize + (i <= numExtras);
         chunkFile = sprintf("%s-%d.ol.h5", outputFile, i);
         CreateOLPDDataset( ...
             chunkFile, ...
-            simulator.x, simulator.y, simulator.uDOut, simulator.vDOut, ...
+            x, y, uDOut, vDOut, ...
             datasetSize ...
-        ); %#ok<PFBNS>
+        );
         
         for j=1:ChunkSize
             simulation = copy(baseSimulation);
-            simulator.Generate(chunkFile, simulation, i, j);
+            generator(simulation, chunkFile, i, j, stream{i}); %#ok<PFBNS>
         end
     end
     fprintf("Finished generating data\n");
