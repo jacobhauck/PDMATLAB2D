@@ -1,4 +1,4 @@
-function f = GRF2D(num_modes, amplitude_fn)
+function f = GRF2D(num_modes, amplitude_fn, rngStream)
     % Generates a zero-mean Gaussian random field defined on [0,1]^2
     % 
     % Parameters
@@ -9,6 +9,8 @@ function f = GRF2D(num_modes, amplitude_fn)
     %               are the Fourier mode index arrays of arbitrary shape,
     %               and a is an array of amplitudes with the same shape as
     %               i and j
+    % rngStream: Optional random number stream to use to generate
+    %            coefficients
     %
     % Outputs
     % -------
@@ -25,8 +27,13 @@ function f = GRF2D(num_modes, amplitude_fn)
     ky = (2*pi) * reshape(gy, numel(gy), 1);  % (total_modes, 1)
 
     a = amplitude_fn(gx, gy);  % (total_modes, 1)
-    sinCoef = a .* randn(size(a));  % (total_modes, 1)
-    cosCoef = a .* randn(size(a));  % (total_modes, 1)
+    if nargin == 2
+        sinCoef = a .* randn(size(a));  % (total_modes, 1)
+        cosCoef = a .* randn(size(a));  % (total_modes, 1)
+    else
+        sinCoef = a .* randn(rngStream, size(a));  % (total_modes, 1)
+        cosCoef = a .* randn(rngStream, size(a));  % (total_modes, 1)
+    end
     
     f = @(x, y) evalFourierSeries(x, y, kx, ky, sinCoef, cosCoef);
 end

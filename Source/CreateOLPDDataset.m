@@ -17,38 +17,29 @@
 % exists), initialized and ready to receive NumSamples samples generated on
 % the given grid.
 
-function CreateOLPDDataset(OutputFile, GridFile, NumSamples)
+function CreateOLPDDataset(OutputFile, x, y, uDOut, vDOut, NumSamples)
     if exist(OutputFile, "file")
         delete(OutputFile);
     end
-
-    % Clear variables from memory
-    clearvars xx;
-    clearvars yy;
-
-    % Load grid variables (just need xx and yy)
-    load(GridFile, "xx", "yy");
     
-    % Should now have access to input grid information
-    numNodes = length(xx);
-    
-    outXY = single([xx'; yy']);  % (2, numNodes)
-    h5create(OutputFile, "/x/1", [2, numNodes], "Datatype", "single");
-    h5write(OutputFile, "/x/1", outXY);
+    x = x';
+    h5create(OutputFile, "/x/1", size(x), "Datatype", "single");
+    h5write(OutputFile, "/x/1", x);
     h5writeatt(OutputFile, "/x/1", "id", int32(1));
-
-    h5create(OutputFile, "/y/1", [2, numNodes], "Datatype", "single");
-    h5write(OutputFile, "/y/1", outXY);
+    
+    y = y';
+    h5create(OutputFile, "/y/1", size(y), "Datatype", "single");
+    h5write(OutputFile, "/y/1", y);
     h5writeatt(OutputFile, "/y/1", "id", int32(1));
     
     outIndices = int32(0 : (NumSamples - 1));
     h5create(OutputFile, "/u/1/indices", NumSamples, "Datatype", "int32");
     h5write(OutputFile, "/u/1/indices", outIndices);
-    h5create(OutputFile, "/u/1/u", [2, numNodes, NumSamples], "Datatype", "single");
+    h5create(OutputFile, "/u/1/u", [uDOut, size(x, 2), NumSamples], "Datatype", "single");
     h5writeatt(OutputFile, "/u/1", "disc_id", int32(1));
 
     h5create(OutputFile, "/v/1/indices", NumSamples, "Datatype", "int32");
     h5write(OutputFile, "/v/1/indices", outIndices);
-    h5create(OutputFile, "/v/1/v", [2, numNodes, NumSamples], "Datatype", "single");
+    h5create(OutputFile, "/v/1/v", [vDOut, size(y, 2), NumSamples], "Datatype", "single");
     h5writeatt(OutputFile, "/v/1", "disc_id", int32(1));
 end

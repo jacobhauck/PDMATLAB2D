@@ -11,31 +11,29 @@
 % ========================================================================
 
 % ========================================================================
-% Input deck for a crack branching problem on a pre-notched soda–lime glass 
-% thin plate 
+% Input deck for a wave propagation problem with an initial displacement 
+% based on a radial Gaussian distribution (the parameters are provided in
+% consistent units)
 % ========================================================================
-
-% Reference: 
-% ---------
-% F. Bobaru and G. Zhang, Why do cracks branch? A peridynamic investigation of
-% dynamic brittle fracture, International Journal of Fracture 196 (2015): 59-98.
 
 % ------------------------------------------------------------------------
 %                  Domain geometry and discretization
 % ------------------------------------------------------------------------
 
 % Domain boundaries
-Xo = -0.05; % [m] : Left  boundary of the domain 
-Xn =  0.05; % [m] : Right boundary of the domain
-Yo = -0.02; % [m] : Lower boundary of the domain
-Yn =  0.02; % [m] : Upper boundary of the domain
+Xo = 0; % Left  boundary of the domain
+Xn = 5; % Right boundary of the domain
+Yo = 0; % Lower boundary of the domain
+Yn = 5; % Upper boundary of the domain
 
 % Number of nodes
-Nx = 300; % Number of nodes in the x-direction 
-Ny = 120; % Number of nodes in the y-direction
+Nx = 200; % Number of nodes in the x-direction 
+Ny = 200; % Number of nodes in the y-direction
 
 % Grid perturbation coefficient
 PG = 0;
+
+GridFile = 'GridFile1.mat';
 
 % ------------------------------------------------------------------------
 %                         Time discretization
@@ -45,45 +43,45 @@ PG = 0;
 Ti = 0;
 
 % Final time
-Tf = 3.2e-5; % [s] :    43 microsec
+Tf = 1.8;
 
-% Time step   
-dt = 6.7E-8; % [s] : 67E-3 microsec
+% Time step
+dt = 0.01;
 
 % Time-integration scheme
-TimeScheme = 'VVerlet'; % Velocity Verlet 
+TimeScheme = 'VVerlet'; % Velocity Verlet
 
 % ------------------------------------------------------------------------
-%                              PD model 
+%                             PD model 
 % ------------------------------------------------------------------------
 
 % Constitutive model
-model = 'GPMB'; % Generalized Prototype Microelastic Brittle (GPMB)
+model = 'GPMB'; % Generalized Prototype Microelastic Brittle (GPMB) model
 
 % Plane elasticity model
 PlanarModel = 'PlaneStress';
 
 % Horizon
-del = 0.001; % [m]
+del = 0.1; 
 
 % Influence function order indicator
 omega = 0; % Constant influence function
 
 % Flag for bond breaking
-flag_BB = 1;
+flag_BB = 0;
 
 % ------------------------------------------------------------------------
-%                       Classical material properties
+%                      Classical material properties
 % ------------------------------------------------------------------------
 
-% Mass density 
-rho = 2440; % [kg/m^3]
+% Mass density
+rho = 1;
 
-% Young's modulus   
-E = 72e+9;  % [Pa] : 72 GPa 
+% Young's modulus
+E = 1;
 
-% Fracture energy 
-Go = 3.8;   % [J/m^2]
+% Fracture energy
+Go = 1;
 
 % ------------------------------------------------------------------------
 %                         Meshfree discretization 
@@ -100,23 +98,8 @@ AlgName = 'FA'; % FA algorithm
 % Body force density
 % ------------------
 
-alpha = 0.1;
-beta = 1.0;
-gamma = 1.0;
-
-modtop_n = GRF1D(3, @(i) alpha ./ ((beta + i.^2).^(gamma/2)));
-modbot_n = GRF1D(3, @(i) alpha ./ ((beta + i.^2).^(gamma/2)));
-modtop = @(x) 7*alpha + modtop_n((x - Xo) / (Xn - Xo));
-modbot = @(x) 7*alpha + modbot_n((x - Xo) / (Xn - Xo));
-
-% Compute dy
-dy = (Yn - Yo)/Ny;
-
-% Traction amplitude
-sigma = 2E6; % [Pa] : 2 MPa
-
-bvfunc = @(x,y,t) (0.*x + 0.*y)*t;                         % x-component of body force density
-bwfunc = @(x,y,t) ( (y > Yn - dy) .* modtop(x) + (y < Yo + dy) .* modbot(x) ).*sigma.*sign(y)/dy; % y-component of body force density
+bvfunc = @(x,y,t) (0.*x + 0.*y)*t; % x-component of body force density
+bwfunc = @(x,y,t) (0.*x + 0.*y)*t; % y-component of body force density
 
 % ------------------
 % Initial conditions
@@ -124,27 +107,26 @@ bwfunc = @(x,y,t) ( (y > Yn - dy) .* modtop(x) + (y < Yo + dy) .* modbot(x) ).*s
 
 % Initial displacement functions
 
-vofunc = @(x,y) (0.*x + 0.*y); % x-component of initial displacement
-wofunc = @(x,y) (0.*x + 0.*y); % y-component of initial displacement
+% Tolerance
+tol = 1E-15;
+
+% Parameters
+xm    = 2.5;     % x-coordinate of pulse center 
+ym    = 2.5;     % y-coordinate of pulse center 
+A     = 0.025;   % amplitude of radial Gaussian distribution
+sigma = 0.3;    % standard deviation of radial Gaussian distribution
+mu    = 6*sigma; % radial distance from pulse center of radial Gaussian distribution mean 
+
+% Functions
+r      = @(x,y) sqrt((x-xm).^2+(y-ym).^2);                    % distance from pulse center
+uo     = @(x,y) ( r(x,y) > mu-6*sigma & r(x,y) < mu+6*sigma ).* A .* exp( (-(r(x,y) - mu).^2) / (2*sigma)^2 ); % magnitude of initial displacement
+vofunc = @(x,y) uo(x,y).*(x-xm)./(r(x,y) + tol);              % x-component of initial displacement
+wofunc = @(x,y) uo(x,y).*(y-ym)./(r(x,y) + tol);              % y-component of initial displacement
 
 % Initial velocity functions
 
-Vvofunc = @(x,y) (0.*x + 0.*y); % x-component of initial velocity
-Vwofunc = @(x,y) (0.*x + 0.*y); % y-component of initial velocity
-
-% -------------------
-% No-fail zone
-% -------------------
-
-% No-fail function
-nofailfunc = @(x,y) ( abs(y) > Yn - del ); 
-
-% ------------------
-% Prenotch
-% ------------------
-
-%                       Xc1   Yc1  Xc2  Yc2
-PreNotchCoordinates = [-0.05  0.0  0.0  0.0];
+Vvofunc = @(x,y) 0.*x + 0.*y; % x-component of initial velocity
+Vwofunc = @(x,y) 0.*x + 0.*y; % y-component of initial velocity
 
 % ------------------------------------------------------------------------
 %                           Postprocessing
@@ -154,21 +136,17 @@ PreNotchCoordinates = [-0.05  0.0  0.0  0.0];
 flag_DynamicPlotting = 1;
 
 % Frequency of plotting during time integration
-DynamicPlotFrequency = 40; % Plot every 40 time steps (beginning from the first one)
+DynamicPlotFrequency = 10; % Plot every 10 time steps (beginning from the first one)
 
 % Frequency of time-integration step display
-TimeStepDisplayFrequency = 20;
+TimeStepDisplayFrequency = 10;
 
 % Flag for plotting at final time
 flag_FinalPlots = 1;
 
 % Plot settings
-%                     Field Name      Field variable   Colorbar title  Point size  Colormap limits  Colormap    Axes limits  Configuration
-PlotSettings = {'StrainEnergyDensity' , 'log10(W)'  , '$\log_{10}(W)$'  ,    8    ,     [0 3.5]   ,   'jet'  , [Xo Xn Yo Yn] , 'Reference';
-                      'Damage'        ,   'phi'     ,   '$\varphi$'     ,    8    ,     [0 0.4]   , 'parula' , [Xo Xn Yo Yn] , 'Reference'};
-
-% Flag to visualize pre-notch as damaged
-flag_DamagedPrenotches = 1;
+%                     Field Name             Field variable         Colorbar title   Point size  Colormap limits   Colormap    Axes limits    Configuration
+PlotSettings = {'DisplacementMagnitude' , 'sqrt(v.^2 + w.^2)/A'  , '$\|{\bf u}\|/A$' ,    8    ,     [0 1.0]   ,   'parula'  , [Xo Xn Yo Yn] , 'Reference'};
 
 % Flag to create video(s): works only if flag_DynamicPlotting = 1
 flag_video = 1;

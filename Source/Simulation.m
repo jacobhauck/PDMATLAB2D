@@ -1,4 +1,4 @@
-classdef Simulation < handle
+classdef Simulation < handle & matlab.mixin.Copyable
     % Defines a single PDMATLAB2D simulation
     % 
     % This is an encapsulation of the global variable approach used
@@ -476,6 +476,9 @@ classdef Simulation < handle
             if self.flag_ShowProgress
                 tic;
             end
+            
+            self.ComputeForceEnergyDensity();
+            self.ComputeBodyForceDensity();
 
             % Loop over time steps
             for n = 1:Nt-1

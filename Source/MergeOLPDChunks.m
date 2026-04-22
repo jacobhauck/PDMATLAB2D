@@ -1,9 +1,6 @@
-function MergeOLPDChunks(DatasetFile, ChunkSize)
-    numSamples = length(h5read(DatasetFile, "/u/1/indices"));
-    numChunks = idivide(int64(numSamples + ChunkSize - 1), int64(ChunkSize));
-    
+function MergeOLPDChunks(DatasetFile, NumChunks)
     start = [1, 1, 1];
-    for chunkIndex = 1:numChunks
+    for chunkIndex = 1:NumChunks
         chunkFile = sprintf("%s.%d.ol.h5", DatasetFile, chunkIndex);
         if ~exist(chunkFile, "file")
             error(sprintf("Cannot merge incomplete set of chunks, missing: %s", chunkFile));
@@ -26,6 +23,6 @@ function MergeOLPDChunks(DatasetFile, ChunkSize)
         h5write(DatasetFile, "/u/1/u", u, start, sizeU);
         h5write(DatasetFile, "/v/1/v", v, start, sizeV);
         
-        start(3) = start(3) + ChunkSize;
+        start(3) = start(3) + sizeU(3);
     end
 end
