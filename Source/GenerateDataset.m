@@ -8,7 +8,7 @@ function GenerateDataset(outputFile, datasetSize, numChunks, seed, baseSimulatio
     fprintf("Generating data with %d chunks of size %d\n", numChunks, minChunkSize);
     stream = cell(numChunks, 1);
     [stream{:}] = RandStream.create("mrg32k3a", "NumStreams", numChunks, 'Seed', seed);
-    for i=1:numChunks
+    parfor i=1:numChunks
         ChunkSize = minChunkSize + (i <= numExtras);
         chunkFile = sprintf("%s-%d.ol.h5", outputFile, i);
         CreateOLPDDataset( ...
