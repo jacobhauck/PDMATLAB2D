@@ -21,11 +21,11 @@
 function WriteOLPDSample(DatasetFile, Index, u, v)
     uNumNodes = size(u, 1);
     uDOut = size(u, 2);
-    uData = single(reshape(u', uDOut, numNodes, 1));  % (uDOut, uNumNodes, 1)
+    uData = single(reshape(u', uDOut, uNumNodes, 1));  % (uDOut, uNumNodes, 1)
     h5write(DatasetFile, "/u/1/u", uData, [1, 1, Index], [uDOut, uNumNodes, 1]);
     
-    vNumNodes = size(u, 1);
+    vNumNodes = size(v, 1);
     vDOut = size(v, 2);
-    vData = single(reshape(v', vDOut, numNodes, 1));  % (vDOut, vNumNodes, 1)
+    vData = single(reshape(v', vDOut, vNumNodes, 1));  % (vDOut, vNumNodes, 1)
     h5write(DatasetFile, "/v/1/v", vData, [1, 1, Index], [vDOut, vNumNodes, 1]);
 end

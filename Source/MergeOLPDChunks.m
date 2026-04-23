@@ -1,7 +1,7 @@
 function MergeOLPDChunks(DatasetFile, NumChunks)
     start = [1, 1, 1];
     for chunkIndex = 1:NumChunks
-        chunkFile = sprintf("%s.%d.ol.h5", DatasetFile, chunkIndex);
+        chunkFile = sprintf("%s-%d.ol.h5", DatasetFile, chunkIndex);
         if ~exist(chunkFile, "file")
             error(sprintf("Cannot merge incomplete set of chunks, missing: %s", chunkFile));
         end
