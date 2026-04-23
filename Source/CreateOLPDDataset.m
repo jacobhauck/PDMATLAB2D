@@ -24,12 +24,12 @@ function CreateOLPDDataset(OutputFile, x, y, uDOut, vDOut, NumSamples)
     
     x = x';
     h5create(OutputFile, "/x/1", size(x), "Datatype", "single");
-    h5write(OutputFile, "/x/1", x);
+    h5write(OutputFile, "/x/1", single(x));
     h5writeatt(OutputFile, "/x/1", "id", int32(1));
     
     y = y';
     h5create(OutputFile, "/y/1", size(y), "Datatype", "single");
-    h5write(OutputFile, "/y/1", y);
+    h5write(OutputFile, "/y/1", single(y));
     h5writeatt(OutputFile, "/y/1", "id", int32(1));
     
     outIndices = int32(0 : (NumSamples - 1));

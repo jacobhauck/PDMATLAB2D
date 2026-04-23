@@ -232,7 +232,18 @@ classdef Simulation < handle & matlab.mixin.Copyable
         end
 
         function SaveGrid(self, GridFileOut)
-            save(GridFileOut, "-struct", "self", ...
+            saveVars = struct;
+            saveVars.xx = self.xx;
+            saveVars.yy = self.yy;
+            saveVars.u_NA = self.u_NA;
+            saveVars.V_NA = self.V_NA;
+            saveVars.IF_NA = self.IF_NA;
+            saveVars.r_hat_NA = self.r_hat_NA;
+            saveVars.x_hat_NA = self.x_hat_NA;
+            saveVars.y_hat_NA = self.y_hat_NA;
+            saveVars.flag_RDUG = self.flag_RDUG;
+
+            save(GridFileOut, "-struct", "saveVars", ...
                 "xx", "yy", ...
                 "u_NA", "IF_NA", "V_NA", ...
                 "r_hat_NA", "x_hat_NA", "y_hat_NA", ...
@@ -240,7 +251,7 @@ classdef Simulation < handle & matlab.mixin.Copyable
             );
 
             if self.flag_ShowProgress
-                fprinf("Saved grid to file: %s\n", GridFileOut);
+                fprintf("Saved grid to file: %s\n", GridFileOut);
             end
         end
 
@@ -415,6 +426,17 @@ classdef Simulation < handle & matlab.mixin.Copyable
                 % Figure number
                 nfig = nplot;                       
                 
+                % Read plot field name
+                cnodes_name = self.PlotSettings{nplot, 1};
+                
+                % Compute damage, if needed
+                if self.flag_BB
+                    if strcmp(cnodes_name, 'Damage')
+                        % Compute damage
+                        phi = self.ComputeDamage();
+                    end
+                end
+
                 % Read plot field variable
                 cnodes = eval(self.PlotSettings{nplot, 2}); 
 
@@ -425,7 +447,7 @@ classdef Simulation < handle & matlab.mixin.Copyable
                 cmap          = self.PlotSettings{nplot, 6};       % Colormap
                 box           = self.PlotSettings{nplot, 7};       % Axes limits
                 configuration = self.PlotSettings{nplot, 8};       % Configuration: 'Reference' or 'Current'
-
+                
                 % Plot field
                 if strcmp(configuration,'Reference')
                     PlotField(nfig, self.xx, self.yy, cnodes, ctitle, psize, climits, cmap, box)
