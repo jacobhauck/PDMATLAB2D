@@ -36,9 +36,9 @@ sim.mask_nofail = (abs(sim.yy) > Yn - sim.del);
 
 sim.ComputePDConstants();
 
-numChunks = 1;
-datasetSize = 1;
-seed = 2026;
+numChunks = 64;
+datasetSize = 500;
+seed = 1105;
 
 num_modes = 3;
 alpha = 0.15;
@@ -49,7 +49,7 @@ sigma = 2E6;
 
 xy = [sim.xx, sim.yy];
 generator = MakeGenerator(num_modes, alpha, beta, gamma, Xo, Xn, Yo, Yn, dy, sigma, bx, PreNotchCoordinates);
-GenerateDataset("RandomCrack1-2.ol.h5", datasetSize, numChunks, seed, sim, bx, xy, 2, 1, generator);
+GenerateDataset("test_1-1.ol.h5", datasetSize, numChunks, seed, sim, bx, xy, 2, 1, generator);
 
 function generator = MakeGenerator(num_modes, alpha, beta, gamma, Xo, Xn, Yo, Yn, dy, sigma, bx, PreNotchCoordinates)
     function GenerateOne(simulation, outputFile, ~, sampleIndex, curStream)

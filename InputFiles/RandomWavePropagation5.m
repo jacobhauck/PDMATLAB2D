@@ -1,21 +1,4 @@
 
-% ========================================================================
-% Copyright (c) 2022 by Oak Ridge National Laboratory                      
-% All rights reserved.                                                     
-%                                                                           
-% This file is part of PDMATLAB2D. PDMATLAB2D is distributed under a           
-% BSD 3-clause license. For the licensing terms see the LICENSE file in    
-% the top-level directory.                                                 
-%                                                                          
-% SPDX-License-Identifier: BSD-3-Clause                                    
-% ========================================================================
-
-% ========================================================================
-% Input deck for a wave propagation problem with an initial displacement 
-% based on a radial Gaussian distribution (the parameters are provided in
-% consistent units)
-% ========================================================================
-
 % ------------------------------------------------------------------------
 %                  Domain geometry and discretization
 % ------------------------------------------------------------------------
@@ -34,6 +17,9 @@ Ny = 200; % Number of nodes in the y-direction
 PG = 0;
 
 GridFile = 'GridFile1.mat';
+
+% flag_SaveGrid = 1;
+% GridFileOut = 'GridFile1.mat';
 
 % ------------------------------------------------------------------------
 %                         Time discretization
@@ -107,26 +93,26 @@ bwfunc = @(x,y,t) (0.*x + 0.*y)*t; % y-component of body force density
 
 % Initial displacement functions
 
-% Tolerance
-tol = 1E-15;
-
 % Parameters
-xm    = 2.5;     % x-coordinate of pulse center 
-ym    = 2.5;     % y-coordinate of pulse center 
-A     = 0.025;   % amplitude of radial Gaussian distribution
-sigma = 0.3;    % standard deviation of radial Gaussian distribution
-mu    = 6*sigma; % radial distance from pulse center of radial Gaussian distribution mean 
+num_modes = 12;
+alpha = 0.01;
+beta = 1.0;
+gamma = 3.1;
+amplitude_fn = @(i, j) alpha * (beta + i.^2 + j.^2) .^ (-gamma / 2);
 
-% Functions
-r      = @(x,y) sqrt((x-xm).^2+(y-ym).^2);                    % distance from pulse center
-uo     = @(x,y) ( r(x,y) > mu-6*sigma & r(x,y) < mu+6*sigma ).* A .* exp( (-(r(x,y) - mu).^2) / (2*sigma)^2 ); % magnitude of initial displacement
-vofunc = @(x,y) uo(x,y).*(x-xm)./(r(x,y) + tol);              % x-component of initial displacement
-wofunc = @(x,y) uo(x,y).*(y-ym)./(r(x,y) + tol);              % y-component of initial displacement
+% Initial displacement functions
+% x-component of initial displacement
+addpath("..");
+voref = GRF2D(num_modes, amplitude_fn);  
+vofunc = @(x, y) voref((x - Xo) / (Xn - Xo), (y - Yo) / (Yn - Yo));
+% y-component of initial displacement
+woref = GRF2D(num_modes, amplitude_fn);
+wofunc = @(x, y) woref((x - Xo) / (Xn - Xo), (y - Yo) / (Yn - Yo));
 
-% Initial velocity functions
-
+% Initial velocity functions (zero)
 Vvofunc = @(x,y) 0.*x + 0.*y; % x-component of initial velocity
 Vwofunc = @(x,y) 0.*x + 0.*y; % y-component of initial velocity
+
 
 % ------------------------------------------------------------------------
 %                           Postprocessing
@@ -139,14 +125,14 @@ flag_DynamicPlotting = 0;
 DynamicPlotFrequency = 10; % Plot every 10 time steps (beginning from the first one)
 
 % Frequency of time-integration step display
-TimeStepDisplayFrequency = 10;
+TimeStepDisplayFrequency = 50000;  % don't show time-step updates
 
 % Flag for plotting at final time
 flag_FinalPlots = 0;
 
 % Plot settings
 %                     Field Name             Field variable         Colorbar title   Point size  Colormap limits   Colormap    Axes limits    Configuration
-PlotSettings = {'DisplacementMagnitude' , 'sqrt(v.^2 + w.^2)/A'  , '$\|{\bf u}\|/A$' ,    8    ,     [0 1.0]   ,   'parula'  , [Xo Xn Yo Yn] , 'Reference'};
+PlotSettings = {'DisplacementMagnitude' , 'sqrt(v.^2 + w.^2)/alpha'  , '$\|{\bf u}\|/\alpha$' ,    8    ,     [0.0 5.0]   ,   'parula'  , [Xo Xn Yo Yn] , 'Reference'};
 
 % Flag to create video(s): works only if flag_DynamicPlotting = 1
 flag_video = 0;
