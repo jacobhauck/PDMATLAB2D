@@ -1,3 +1,8 @@
+% Generates a dataset whose input u is the initial displacement field
+% and output v is the displacement field at a later time (sim.Tf).
+% The domain is a 5x5 square, discretized using a 200x200 grid.
+% The input displacement is sampled from a Gaussian random field, and bond
+% breaking is disabled.
 sim = Simulation();
 
 sim.flag_DynamicPlotting = 0;
