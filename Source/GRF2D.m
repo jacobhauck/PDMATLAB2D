@@ -1,14 +1,14 @@
-function f = GRF2D(num_modes, amplitude_fn, rngStream)
+function f = GRF2D(numModes, amplitudeFn, rngStream)
     % Generates a zero-mean Gaussian random field defined on [0,1]^2
     % 
     % Parameters
     % ----------
-    % num_modes: Number of Fourier modes (in each direction, + and -) used
-    %            to simulate the field
-    % amplitude_fn: Function with signature (i, j) -> (a), where i and j
-    %               are the Fourier mode index arrays of arbitrary shape,
-    %               and a is an array of amplitudes with the same shape as
-    %               i and j
+    % numModes: Number of Fourier modes (in each direction, + and -) used
+    %           to simulate the field
+    % amplitudeFn: Function with signature (i, j) -> (a), where i and j
+    %              are the Fourier mode index arrays of arbitrary shape,
+    %              and a is an array of amplitudes with the same shape as
+    %              i and j
     % rngStream: Optional random number stream to use to generate
     %            coefficients
     %
@@ -18,7 +18,7 @@ function f = GRF2D(num_modes, amplitude_fn, rngStream)
     %    of x and y coordinates (of any shape), and f is an array of the
     %    values of the field at x and y (with the same shape)
  
-    [gx, gy] = meshgrid(-num_modes:num_modes, -num_modes:num_modes);
+    [gx, gy] = meshgrid(-numModes:numModes, -numModes:numModes);
     % (2*num_modes + 1, 2*num_modes + 1) each
     % total_modes = (2*num_modes + 1)^2
     gx = reshape(gx, numel(gx), 1);  % (total_modes, 1)
@@ -26,7 +26,7 @@ function f = GRF2D(num_modes, amplitude_fn, rngStream)
     kx = (2*pi) * reshape(gx, numel(gx), 1);  % (total_modes, 1)
     ky = (2*pi) * reshape(gy, numel(gy), 1);  % (total_modes, 1)
 
-    a = amplitude_fn(gx, gy);  % (total_modes, 1)
+    a = amplitudeFn(gx, gy);  % (total_modes, 1)
     if nargin == 2
         sinCoef = a .* randn(size(a));  % (total_modes, 1)
         cosCoef = a .* randn(size(a));  % (total_modes, 1)

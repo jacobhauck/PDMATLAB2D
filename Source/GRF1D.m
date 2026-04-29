@@ -1,14 +1,14 @@
-function f = GRF1D(num_modes, amplitude_fn, rngStream)
+function f = GRF1D(numModes, amplitudeFn, rngStream)
     % Generates a zero-mean Gaussian random field defined on [0,1]
     % 
     % Parameters
     % ----------
-    % num_modes: Number of Fourier modes (in each direction, + and -) used
-    %            to simulate the field
-    % amplitude_fn: Function with signature (i) -> (a), where i is the
-    %               Fourier mode index array of arbitrary shape,
-    %               and a is an array of amplitudes with the same shape as
-    %               i
+    % numModes: Number of Fourier modes (in each direction, + and -) used
+    %           to simulate the field
+    % amplitudeFn: Function with signature (i) -> (a), where i is the
+    %              Fourier mode index array of arbitrary shape,
+    %              and a is an array of amplitudes with the same shape as
+    %              i
     % rngStream: Optional stream of random numbers to use to generate the 
     %            coefficients
     %
@@ -18,11 +18,11 @@ function f = GRF1D(num_modes, amplitude_fn, rngStream)
     %    of x coordinates (of any shape), and f is an array of the
     %    values of the field at x (with the same shape)
  
-    gx = (-num_modes:num_modes)';
+    gx = (-numModes:numModes)';
     % (2*num_modes + 1, 1) 
     kx = (2*pi) * gx;  % (total_modes, 1)
 
-    a = amplitude_fn(gx);  % (total_modes, 1)
+    a = amplitudeFn(gx);  % (total_modes, 1)
     if nargin == 2
         sinCoef = a .* randn(size(a));  % (total_modes, 1)
         cosCoef = a .* randn(size(a));  % (total_modes, 1)

@@ -52,8 +52,8 @@ classdef GRF2DON
 
     methods
         function self = GRF2DON(numModes, amplitudeFn, domain, rngStream)
-            % A zero-mean Gaussian random field defined on [0,1]^2 using
-            % an orthonormal basis
+            % A zero-mean Gaussian random field defined on 
+            % [x0, x1] x [y0, y1] using an orthonormal Fourier basis
             % 
             % Parameters
             % ----------
@@ -133,16 +133,26 @@ classdef GRF2DON
             self.cov(start:end, start:end) = diag(self.dCov);
         end
 
-        function f = generate(self)
+        function f = generate(self, rngStream)
             % Generates a sample from the GRF as a function
             % 
+            % Parameters
+            % ----------
+            % rngStream: Optional stream of random numbers to use instead
+            %            of default or self.rngStream
+            %
             % Return
             % ------
             % f: function (x, y) -> f(x, y) sampled from the GRF. x, y may
             % have any shape, and f(x, y) will have the same shape, with f
             % applied elementwise.
-
-            if isempty(self.rngStream)
+            
+            if nargin == 1
+                a = randn(rngStream, size(self.akx));  % ((numModes + 1)^2, 1)
+                b = randn(rngStream, size(self.bkx));  % (numModes^2 + numModes, 1)
+                c = randn(rngStream, size(self.ckx));  % (numModes^2 + numModes, 1)
+                d = randn(rngStream, size(self.dkx));  % (numModes^2, 1)
+            elseif isempty(self.rngStream)
                 a = randn(size(self.akx));  % ((numModes + 1)^2, 1)
                 b = randn(size(self.bkx));  % (numModes^2 + numModes, 1)
                 c = randn(size(self.ckx));  % (numModes^2 + numModes, 1)
@@ -308,18 +318,18 @@ classdef GRF2DON
 
         function validateOrthonormality(self)
             % Validates that the basis functions are orthonormal
-            [x, y] = meshgrid(linspace(self.x0, self.x1, 128)', linspace(self.y0, self.y1, 128)');
+            [x, y] = meshgrid(linspace(self.x0, self.x1, 129)', linspace(self.y0, self.y1, 129)');
             
             % Construct basis functions
-            basis = zeros(length(coef), size(x, 1), size(x, 2));
-            for i = 1:length(coef)
+            basis = zeros(self.basisDimension(), size(x, 1), size(x, 2));
+            for i = 1:self.basisDimension()
                 basis(i, 1:end, 1:end) = self.evalBasis(x, y, i);
             end
 
             % Evaluate inner products
-            gramian = zeros(length(coef), length(coef));
-            for i = 1:length(coef)
-                for j = 1:length(coef)
+            gramian = zeros(self.basisDimension(), self.basisDimension());
+            for i = 1:self.basisDimension()
+                for j = 1:self.basisDimension()
                     basisi = reshape(basis(i, 1:end, 1:end), [], 1);
                     basisj = reshape(basis(j, 1:end, 1:end), [], 1);
                     da = (self.x1 - self.x0) * (self.y1 - self.y0) / (128^2);
@@ -332,7 +342,7 @@ classdef GRF2DON
 
             fprintf( ...
                 "Max deviation from I: %f\n", ...
-                max(max(abs(gramian - eye(length(coef))))) ...
+                max(max(abs(gramian - eye(self.basisDimension())))) ...
             );
         end
 
@@ -350,7 +360,7 @@ classdef GRF2DON
             % uCoef: (n, 1) coefficients of the given function in the GRF
             %        basis
 
-            [x, y] = meshgrid(linspace(self.x0, self.x1, 128)', linspace(self.x0, self.x1, 128)');
+            [x, y] = meshgrid(linspace(self.x0, self.x1, 129)', linspace(self.x0, self.x1, 129)');
             x = reshape(x, [], 1);  % (numPoints, 1)
             y = reshape(y, [], 1);  % (numPoints, 1)
             uVal = u(x, y);  % (numPoints, 1)
