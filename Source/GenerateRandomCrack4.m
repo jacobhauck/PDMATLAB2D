@@ -57,7 +57,6 @@ GenerateDataset(datasetName, datasetSize, numChunks, seed, sim, bx, xy, 2, 1, ge
 function generator = MakeGenerator(sigmaRange, Yo, Yn, dy, sigma, bx, PreNotchCoordinates)
     function GenerateOne(simulation, outputFile, ~, sampleIndex, curStream)
         sigmaRel = rand(curStream) * (sigmaRange(2) - sigmaRange(1)) + sigmaRange(1);
-        fprintf("Sigma rel = %f\n", sigmaRel);
         modboth = @(x) ones(size(x)) * sigmaRel;
         
         % y-component of body force density
