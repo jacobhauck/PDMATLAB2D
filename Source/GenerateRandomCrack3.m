@@ -41,9 +41,9 @@ sim.mask_nofail = (abs(sim.yy) > Yn - sim.del);
 
 sim.ComputePDConstants();
 
-numChunks = 1;
-datasetSize = 1;
-seed = 2026;
+numChunks = 64;
+datasetSize = 500;
+seed = 1234;
 
 sigma = 2E6;
 sigmaTopRange = [0.0, 0.38];
@@ -53,7 +53,7 @@ alpha = 1.0;
 beta = 1.0;
 gamma = 2.0;
 
-datasetName = "test9.ol.h5";
+datasetName = "test3.ol.h5";
 
 xy = [sim.xx, sim.yy];
 generator = MakeGenerator(numModes, alpha, beta, gamma, sigmaTopRange, sigmaBotRange, Yo, Yn, dy, sigma, bx, PreNotchCoordinates);

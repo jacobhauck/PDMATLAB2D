@@ -34,22 +34,22 @@ sim.LoadGrid("GridFile2.mat");
 PreNotchCoordinates = [-0.05  0.0  0.0  0.0];
 sim.CreatePreNotches(PreNotchCoordinates, true);
 
-Nbx = 129;
+Nbx = 33;
 bx = linspace(Xo, Xn, Nbx)';  % (Nbx, 1)
 
 sim.mask_nofail = (abs(sim.yy) > Yn - sim.del); 
 
 sim.ComputePDConstants();
 
-numChunks = 4;
-datasetSize = 24;
-seed = 2026;
+numChunks = 64;
+datasetSize = 500;
+seed = 1234;
 
 sigma = 2E6;
 sigmaTopRange = [0.0, 0.38];
 sigmaBotRange = [0.75, 0.75];
 
-datasetName = "test8.ol.h5";
+datasetName = "test2.ol.h5";
 
 xy = [sim.xx, sim.yy];
 generator = MakeGenerator(sigmaTopRange, sigmaBotRange, Yo, Yn, dy, sigma, bx, PreNotchCoordinates);
