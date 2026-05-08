@@ -1,8 +1,3 @@
-% Generates a dataset whose input u comprises a pair of modulation
-% functions used to modulate the traction on the top and bottom of a bar,
-% and whose output v is the final damage field. The modulation functions
-% are constant functions whose value is sampled uniformly from a range.
-
 sim = Simulation();
 
 sim.flag_DynamicPlotting = false;
@@ -41,8 +36,8 @@ sim.mask_nofail = (abs(sim.yy) > Yn - sim.del);
 
 sim.ComputePDConstants();
 
-numChunks = 1;
-datasetSize = 5;
+numChunks = 32;
+datasetSize = 128;
 seed = 1234;
 
 sigma = 2E6;
