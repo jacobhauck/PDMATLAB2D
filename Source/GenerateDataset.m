@@ -9,15 +9,15 @@ function GenerateDataset(outputFile, datasetSize, numChunks, seed, baseSimulatio
     stream = cell(numChunks, 1);
     [stream{:}] = RandStream.create("mrg32k3a", "NumStreams", numChunks, 'Seed', seed);
     parfor i=1:numChunks
-        ChunkSize = minChunkSize + (i <= numExtras);
+        chunkSize = minChunkSize + (i <= numExtras);
         chunkFile = sprintf("%s-%d.ol.h5", outputFile, i);
         CreateOLPDDataset( ...
             chunkFile, ...
             x, y, uDOut, vDOut, ...
-            ChunkSize ...
+            chunkSize ...
         );
         
-        for j=1:ChunkSize
+        for j=1:chunkSize
             simulation = copy(baseSimulation);
             generator(simulation, chunkFile, i, j, stream{i}); %#ok<PFBNS>
         end
