@@ -41,9 +41,9 @@ sim.mask_nofail = (abs(sim.yy) > Yn - sim.del);
 
 sim.ComputePDConstants();
 
-numChunks = 1;
-datasetSize = 10;
-seed = 2026;
+numChunks = 64;
+datasetSize = 500;
+seed = 1024;
 
 sigma = 2E6;
 sigmaRange = [0.2, 0.57];

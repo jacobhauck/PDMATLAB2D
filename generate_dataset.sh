@@ -1,11 +1,11 @@
 # Configuration variables
-OUTPUT_FILE=test.ol.h5
+OUTPUT_FILE=$1
 GRID_FILE=GridFile1.mat
-DATASET_SIZE=5
-NUM_CHUNKS=2
-RANDOM_SEED=2026
+DATASET_SIZE=$2
+NUM_CHUNKS=1
+RANDOM_SEED=$4
 CHUNK_SIZE=$(( (DATASET_SIZE + NUM_CHUNKS - 1) / NUM_CHUNKS ))
-INPUT_DECK=RandomWavePropagation
+INPUT_DECK=$3
 
 echo "Creating dataset file with chunks of size " $CHUNK_SIZE
 matlab -batch "CreateOLPDDataset('$OUTPUT_FILE', '$GRID_FILE', $DATASET_SIZE)"
