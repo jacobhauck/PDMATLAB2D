@@ -1,8 +1,7 @@
 % Generates a dataset whose input u comprises a pair of modulation
 % functions used to modulate the traction on the top and bottom of a bar,
 % and whose output v is the final damage field. The modulation functions
-% are Gaussian random fields linearaly normalized to take values in a 
-% fixed range.
+% are constant functions whose value is sampled uniformly from a range.
 
 sim = Simulation();
 
@@ -35,44 +34,33 @@ sim.LoadGrid("GridFile2.mat");
 PreNotchCoordinates = [-0.05  0.0  0.0  0.0];
 sim.CreatePreNotches(PreNotchCoordinates, true);
 
-Nbx = 129;
+Nbx = 33;
 bx = linspace(Xo, Xn, Nbx)';  % (Nbx, 1)
 
 sim.mask_nofail = (abs(sim.yy) > Yn - sim.del); 
 
 sim.ComputePDConstants();
 
-numChunks = 64;
-datasetSize = 500;
+numChunks = 1;
+datasetSize = 5;
 seed = 1234;
 
 sigma = 2E6;
-sigmaTopRange = [0.0, 0.38];
-sigmaBotRange = [0.75, 0.75];
-numModes = 3;
-alpha = 1.0;
-beta = 1.0;
-gamma = 2.0;
+sigmaTopRange = [0.2465, 0.38];
+sigmaBot = 0.75;
 
-datasetName = "test3.ol.h5";
+datasetName = "test5.ol.h5";
 
 xy = [sim.xx, sim.yy];
-generator = MakeGenerator(numModes, alpha, beta, gamma, sigmaTopRange, sigmaBotRange, Yo, Yn, dy, sigma, bx, PreNotchCoordinates);
+generator = MakeGenerator(datasetSize, sigmaTopRange, sigmaBot, Yo, Yn, dy, sigma, bx, PreNotchCoordinates);
 GenerateDataset(datasetName, datasetSize, numChunks, seed, sim, bx, xy, 2, 1, generator);
 
-function normalized = linearNormalize(vals)
-    m = min(vals);
-    M = max(vals);
-    normalized = (vals - m) / (M - m);
-end
-
-function generator = MakeGenerator(numModes, alpha, beta, gamma, sigmaTopRange, sigmaBotRange, Yo, Yn, dy, sigma, bx, PreNotchCoordinates)
+function generator = MakeGenerator(datasetSize, sigmaTopRange, sigmaBot, Yo, Yn, dy, sigma, bx, PreNotchCoordinates)
     function GenerateOne(simulation, outputFile, ~, sampleIndex, curStream)
-        amplitudeFn = @(g) alpha ./ (beta + g.^2) .^ (gamma/2);
-        modtop_n = GRF1D(numModes, amplitudeFn, curStream);
-        modbot_n = GRF1D(numModes, amplitudeFn, curStream);
-        modtop = @(x) linearNormalize(modtop_n(x)) * (sigmaTopRange(2) - sigmaTopRange(1)) + sigmaTopRange(1);
-        modbot = @(x) linearNormalize(modbot_n(x)) * (sigmaBotRange(2) - sigmaBotRange(1)) + sigmaBotRange(1);
+        t = (sampleIndex - 1) / (datasetSize - 1);
+        sigmaTop = t * (sigmaTopRange(2) - sigmaTopRange(1)) + sigmaTopRange(1);
+        modtop = @(x) ones(size(x)) * sigmaTop;
+        modbot = @(x) ones(size(x)) * sigmaBot;
         
         % y-component of body force density
         simulation.bwfunc = @(x,y,t) ( (y > Yn - dy) .* modtop(x) + (y < Yo + dy) .* modbot(x) ).*sigma.*sign(y)/dy;
