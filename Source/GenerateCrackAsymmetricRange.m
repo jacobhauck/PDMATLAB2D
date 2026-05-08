@@ -52,12 +52,14 @@ sigmaBot = 0.75;
 datasetName = "test5.ol.h5";
 
 xy = [sim.xx, sim.yy];
-generator = MakeGenerator(datasetSize, chunkSize, sigmaTopRange, sigmaBot, Yo, Yn, dy, sigma, bx, PreNotchCoordinates);
+generator = MakeGenerator(datasetSize, numChunks, sigmaTopRange, sigmaBot, Yo, Yn, dy, sigma, bx, PreNotchCoordinates);
 GenerateDataset(datasetName, datasetSize, numChunks, seed, sim, bx, xy, 2, 1, generator);
 
-function generator = MakeGenerator(datasetSize, chunkSize, sigmaTopRange, sigmaBot, Yo, Yn, dy, sigma, bx, PreNotchCoordinates)
+function generator = MakeGenerator(datasetSize, numChunks, sigmaTopRange, sigmaBot, Yo, Yn, dy, sigma, bx, PreNotchCoordinates)
     function GenerateOne(simulation, outputFile, chunkIndex, sampleIndex, ~)
-        globalIndex = chunkIndex * chunkSize + sampleIndex;
+        minChunkSize = floor(datasetSize / numChunks);
+        numExtras = mod(datasetSize, numChunks);
+        globalIndex = (chunkIndex - 1) * minChunkSize + min(numExtras, chunkIndex - 1) + sampleIndex;
         t = (globalIndex - 1) / (datasetSize - 1);
         sigmaTop = t * (sigmaTopRange(2) - sigmaTopRange(1)) + sigmaTopRange(1);
         modtop = @(x) ones(size(x)) * sigmaTop;
