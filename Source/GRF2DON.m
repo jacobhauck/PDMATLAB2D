@@ -146,8 +146,30 @@ classdef GRF2DON
             % f: function (x, y) -> f(x, y) sampled from the GRF. x, y may
             % have any shape, and f(x, y) will have the same shape, with f
             % applied elementwise.
+
+            if nargin == 2
+                coef = self.generateCoef(rngStream);
+            else
+                coef = self.generateCoef();
+            end
             
-            if nargin == 1
+            f = @(x, y) self.eval(x, y, coef);
+        end
+
+        function coef = generateCoef(self, rngStream)
+            % Generates a sample from the GRF as a coefficient vector in
+            % the basis
+            % 
+            % Parameters
+            % ----------
+            % rngStream: Optional stream of random numbers to use instead
+            %            of default or self.rngStream
+            %
+            % Return
+            % ------
+            % coef: (n, 1) vector of coefficients in the GRF basis
+
+            if nargin == 2
                 a = randn(rngStream, size(self.akx));  % ((numModes + 1)^2, 1)
                 b = randn(rngStream, size(self.bkx));  % (numModes^2 + numModes, 1)
                 c = randn(rngStream, size(self.ckx));  % (numModes^2 + numModes, 1)
@@ -170,8 +192,6 @@ classdef GRF2DON
                 c .* self.cAmplitude;
                 d .* self.dAmplitude
             ];  % (n, 1)
-
-            f = @(x, y) self.eval(x, y, coef);
         end
 
         function fVal = eval(self, x, y, coef)
