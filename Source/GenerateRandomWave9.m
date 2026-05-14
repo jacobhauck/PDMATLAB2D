@@ -28,9 +28,9 @@ beta = 1.0;
 gamma = 1.5;
 
 numChunks = 32;
-datasetSize = 3000;
-randomSeed = 2026;
-datasetName = "train9.ol.h5";
+datasetSize = 500;
+randomSeed = 1234;
+datasetName = "test9.ol.h5";
 
 xy = [sim.xx, sim.yy];
 generator = MakeGenerator(numModes, alpha, beta, gamma, Xo, Xn, Yo, Yn);

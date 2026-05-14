@@ -9,7 +9,7 @@ sim.bvfunc = zero_t;
 
 sim.Ti = 0.0;
 sim.Tf = 4.3e-5; % [s] :    43 microsec
-sim.dt = 6.7E-8; % [s] : 67E-3 microsec
+sim.dt = 2.5E-8; % [s] : 67E-3 microsec
 sim.del = 0.001;
 sim.flag_BB = true;
 sim.rho = 2440; % [kg/m^3]
@@ -21,11 +21,11 @@ Xn =  0.05; % [m] : Right boundary of the domain
 Yo = -0.02; % [m] : Lower boundary of the domain
 Yn =  0.02; % [m] : Upper boundary of the domain
 
-Nx = 300;
-Ny = 120;
+Nx = 600;
+Ny = 240;
 dy = (Yn - Yo) / Ny;
 
-sim.LoadGrid("GridFile2.mat");
+sim.LoadGrid("GridFile4.mat");
 PreNotchCoordinates = [-0.05  0.0  0.0  0.0];
 sim.CreatePreNotches(PreNotchCoordinates, true);
 
@@ -67,7 +67,7 @@ function generator = MakeGenerator(datasetSize, numChunks, sigmaTopRange, sigmaB
         % bonds)
         zero = @(x, y) 0.0 * x;
         simulation.ImposeInitialConditions(zero, zero, zero, zero);
-        simulation.LoadGrid("GridFile2.mat");
+        simulation.LoadGrid("GridFile4.mat");
         simulation.CreatePreNotches(PreNotchCoordinates, true);
     
         % Get boundary modulators

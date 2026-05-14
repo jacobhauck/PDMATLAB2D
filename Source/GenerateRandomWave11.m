@@ -24,13 +24,13 @@ sim.ComputePDConstants();
 
 numModes = 16;
 alpha = 0.01;
-beta = 1.0;
-gamma = 3.1;
+beta = 4.0;
+gamma = 2.6;
 
 numChunks = 32;
-datasetSize = 3000;
-randomSeed = 2026;
-datasetName = "train10.ol.h5";
+datasetSize = 500;
+randomSeed = 1234;
+datasetName = "test11.ol.h5";
 
 xy = [sim.xx, sim.yy];
 generator = MakeGenerator(numModes, alpha, beta, gamma, Xo, Xn, Yo, Yn);
