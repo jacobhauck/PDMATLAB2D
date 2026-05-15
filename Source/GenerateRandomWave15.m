@@ -28,9 +28,9 @@ beta = 1.0;
 gamma = 2.1;
 
 numChunks = 32;
-datasetSize = 3000;
+datasetSize = 500;
 
-datasetFile = "train15.ol.h5";
+datasetFile = "test15.ol.h5";
 rngSeed = 2026;
 
 xy = [sim.xx, sim.yy];
