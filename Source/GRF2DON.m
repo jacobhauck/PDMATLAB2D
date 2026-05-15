@@ -133,6 +133,26 @@ classdef GRF2DON
             self.cov(start:end, start:end) = diag(self.dCov);
         end
 
+        function kx = kx(self)
+            kx = [self.akx; self.bkx; self.ckx; self.dkx];
+        end
+
+        function  ky = ky(self)
+            ky = [self.aky; self.bky; self.cky; self.dky];
+        end
+
+        function gx = gx(self)
+            gx = round(self.kx() / (2*pi));
+        end
+
+        function gy = gy(self)
+            gy = round(self.ky() / (2*pi));
+        end
+
+        function v = totalVariance(self)
+            v = sum(self.amplitudeFn(self.gx(), self.gy()) .^ 2);
+        end
+
         function f = generate(self, rngStream)
             % Generates a sample from the GRF as a function
             % 
