@@ -32,10 +32,26 @@ totalVar = sum(grf.amplitudeFn(grf.gx(), grf.gy()) .^ 2);
 alpha = sqrt(area * scale^2 / totalVar);
 fprintf("Computed alpha = %f\n", alpha);
 
-numChunks = 1;
-datasetSize = 1;
-randomSeed = 1234;
-datasetName = "test24.ol.h5";
+if ~exist('datasetType', 'var')
+    datasetType = "inspect";
+end
+
+if datasetType == "inspect"
+    numChunks = 1;
+    datasetSize = 1;
+    randomSeed = 1234;
+    datasetName = "inpsect24.ol.h5";
+elseif datasetType == "test"
+    numChunks = 32;
+    datasetSize = 500;
+    randomSeed = 1234;
+    datasetName = "test24.ol.h5";
+elseif datasetType == "train"
+    numChunks = 32;
+    datasetSize = 3000;
+    randomSeed = 2026;
+    datasetName = "train24.ol.h5";
+end
 
 xy = [sim.xx, sim.yy];
 generator = MakeGenerator(numModes, alpha, beta, gamma, Xo, Xn, Yo, Yn);
