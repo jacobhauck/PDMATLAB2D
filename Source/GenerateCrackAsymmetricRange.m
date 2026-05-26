@@ -9,7 +9,7 @@ sim.bvfunc = zero_t;
 
 sim.Ti = 0.0;
 sim.Tf = 4.3e-5; % [s] :    43 microsec
-sim.dt = 1.0e-8; % [s] : 67E-3 microsec
+sim.dt = 2.5E-8; % [s] : 25E-3 microsec
 sim.del = 0.001;
 sim.flag_BB = true;
 sim.rho = 2440; % [kg/m^3]
@@ -23,7 +23,6 @@ Yn =  0.02; % [m] : Upper boundary of the domain
 
 Nx = 300;
 Ny = 120;
-dy = (Yn - Yo) / Ny;
 
 sim.LoadGrid("GridFile2.mat");
 PreNotchCoordinates = [-0.05  0.0  0.0  0.0];
@@ -47,10 +46,10 @@ sigmaBot = 0.75;
 datasetName = "asym.ol.h5";
 
 xy = [sim.xx, sim.yy];
-generator = MakeGenerator(datasetSize, numChunks, sigmaTopRange, sigmaBot, Yo, Yn, dy, sigma, bx, PreNotchCoordinates);
+generator = MakeGenerator(datasetSize, numChunks, sigmaTopRange, sigmaBot, Yo, Yn, sigma, bx, PreNotchCoordinates);
 GenerateDataset(datasetName, datasetSize, numChunks, seed, sim, bx, xy, 2, 1, generator);
 
-function generator = MakeGenerator(datasetSize, numChunks, sigmaTopRange, sigmaBot, Yo, Yn, dy, sigma, bx, PreNotchCoordinates)
+function generator = MakeGenerator(datasetSize, numChunks, sigmaTopRange, sigmaBot, Yo, Yn, sigma, bx, PreNotchCoordinates)
     function GenerateOne(simulation, outputFile, chunkIndex, sampleIndex, ~)
         minChunkSize = floor(datasetSize / numChunks);
         numExtras = mod(datasetSize, numChunks);
@@ -61,7 +60,7 @@ function generator = MakeGenerator(datasetSize, numChunks, sigmaTopRange, sigmaB
         modbot = @(x) ones(size(x)) * sigmaBot;
         
         % y-component of body force density
-        simulation.bwfunc = @(x,y,t) ( (y > Yn - dy) .* modtop(x) + (y < Yo + dy) .* modbot(x) ).*sigma.*sign(y)/dy;
+        simulation.bwfunc = @(x,y,t) ( (y > Yn - sim.del) .* modtop(x) + (y < Yo + sim.del) .* modbot(x) ).*sigma.*sign(y)/sim.del;
         
         % Reset simulation state (need to call LoadGrid again to reset broken
         % bonds)
