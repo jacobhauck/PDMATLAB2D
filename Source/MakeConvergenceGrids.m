@@ -14,7 +14,7 @@ Yo = -0.02; % [m] : Lower boundary of the domain
 Yn =  0.02; % [m] : Upper boundary of the domain
 
 rows = '23456';
-dx = [3.33333E-4, 1.66667E-4, 8.33333E-5, 5.55556E-5, 4.16667E-5];
+dx = [3.33333E-4, 1.66667E-4, 8.33333E-5];
 
 
 for iRow = 1:length(rows)
