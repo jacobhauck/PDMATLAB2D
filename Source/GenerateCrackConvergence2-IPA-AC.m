@@ -9,6 +9,7 @@ sim.bvfunc = zero_t;
 
 sim.Ti = 0.0;
 sim.Tf = 4.3e-5; % [s] :    43 microsec
+sim.AlgName = 'IPA-AC';
 sim.del = 0.001;
 sim.flag_BB = true;
 sim.rho = 2440; % [kg/m^3]
@@ -20,10 +21,10 @@ Xn =  0.05; % [m] : Right boundary of the domain
 Yo = -0.02; % [m] : Lower boundary of the domain
 Yn =  0.02; % [m] : Upper boundary of the domain
 
-Nx = 600;
-Ny = 240;
+Nx = 300;
+Ny = 120;
 
-sim.LoadGrid("ConvergenceGrid3.mat");
+sim.LoadGrid("ConvergenceGrid2-IPA-AC.mat");
 PreNotchCoordinates = [-0.05  0.0  0.0  0.0];
 sim.CreatePreNotches(PreNotchCoordinates, true);
 
@@ -43,7 +44,7 @@ sigmaTop = 0.32;
 sigmaBot = 0.75;
 dt = [6.70E-08, 3.35E-08, 1.68E-08, 8.38E-09, 4.19E-09, 2.09E-09, 1.05E-09];
 
-datasetName = "convergence3.ol.h5";
+datasetName = "convergence2-IPA-AC.ol.h5";
 
 xy = [sim.xx, sim.yy];
 generator = MakeGenerator(datasetSize, numChunks, dt, sigmaTop, sigmaBot, Yo, Yn, sigma, bx, PreNotchCoordinates);
@@ -60,13 +61,13 @@ function generator = MakeGenerator(datasetSize, numChunks, dt, sigmaTop, sigmaBo
         modbot = @(x) ones(size(x)) * sigmaBot;
         
         % y-component of body force density
-        simulation.bwfunc = @(x,y,t) ( (y > Yn - sim.del) .* modtop(x) + (y < Yo + sim.del) .* modbot(x) ).*sigma.*sign(y)/sim.del;
+        simulation.bwfunc = @(x,y,t) ( (y > Yn - simulation.del) .* modtop(x) + (y < Yo + simulation.del) .* modbot(x) ).*sigma.*sign(y)/simulation.del;
         
         % Reset simulation state (need to call LoadGrid again to reset broken
         % bonds)
         zero = @(x, y) 0.0 * x;
         simulation.ImposeInitialConditions(zero, zero, zero, zero);
-        simulation.LoadGrid("ConvergenceGrid3.mat");
+        simulation.LoadGrid("ConvergenceGrid2-IPA-AC.mat");
         simulation.CreatePreNotches(PreNotchCoordinates, true);
     
         % Get boundary modulators
