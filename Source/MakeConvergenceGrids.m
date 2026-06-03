@@ -21,7 +21,14 @@ for iRow = 1:length(rows)
     row = rows(iRow);
     Nx = round((Xn - Xo) / dx(iRow));
     Ny = round(2 * Nx / 5);
-    fprintf('Making grid file "ConvergenceGrid%s.mat" with Nx=%d, Ny=%d\n', row, Nx, Ny);
+
+    fprintf('Making grid file "ConvergenceGrid%s-FA.mat" with Nx=%d, Ny=%d\n', row, Nx, Ny);
+    sim.AlgName = 'FA';
     sim.GenerateGrid(Xo, Xn, Yo, Yn, Nx, Ny, false);
-    sim.SaveGrid(sprintf("ConvergenceGrid%s.mat", row));
+    sim.SaveGrid(sprintf("ConvergenceGrid%s-FA.mat", row));
+
+    fprintf('Making grid file "ConvergenceGrid%s-IPA-AC.mat" with Nx=%d, Ny=%d\n', row, Nx, Ny);
+    sim.AlgName = 'IPA-AC';
+    sim.GenerateGrid(Xo, Xn, Yo, Yn, Nx, Ny, false);
+    sim.SaveGrid(sprintf("ConvergenceGrid%s-IPA-AC.mat", row));
 end
