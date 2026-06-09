@@ -13,14 +13,16 @@ Xn =  0.05; % [m] : Right boundary of the domain
 Yo = -0.02; % [m] : Lower boundary of the domain
 Yn =  0.02; % [m] : Upper boundary of the domain
 
-rows = '23456';
-dx = [3.33333E-4, 1.66667E-4, 8.33333E-5];
-
+rows = '5678';
+Nx0 = 300;
+dx = [(Xn - Xo) / Nx0, (Xn - Xo) / (2 * Nx0), (Xn - Xo) / (4 * Nx0), (Xn - Xo) / (8 * Nx0)];
+delta = [1, 1/2, 1/4, 1/8] * 0.001;
 
 for iRow = 1:length(rows)
     row = rows(iRow);
     Nx = round((Xn - Xo) / dx(iRow));
     Ny = round(2 * Nx / 5);
+    sim.del = delta(iRow);
 
     fprintf('Making grid file "ConvergenceGrid%s-FA.mat" with Nx=%d, Ny=%d\n', row, Nx, Ny);
     sim.AlgName = 'FA';
