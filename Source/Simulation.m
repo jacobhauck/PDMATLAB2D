@@ -320,6 +320,14 @@ classdef Simulation < handle & matlab.mixin.Copyable
             end
         end
 
+        function InitDimensionless(self, n, so)
+            [E_calc, Go_calc, del_calc] = DimensionlessConstants(self.omega, n, so, self.model, self.PlanarModel);
+            self.E = E_calc;
+            self.Go = Go_calc;
+            self.del = del_calc;
+            self.rho = 1.0;
+        end
+
         function ComputePDConstants(self)
             if self.flag_ShowProgress
                 tic
