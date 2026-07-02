@@ -36,6 +36,11 @@
 %             3  : piecewise cubic
 %             5  : piecewise quintic
 %             7  : piecewise septic
+% model     : name of the constitutive model
+%             'GPMB'        : generalized protoypical microelastic brittle model
+%             'Anisotropic' : anisotropic PMB model
+% m         : micromodulus normalization factor for Anisotropic model
+% Lambda    : peridynamic tensor for Anisotropic model
 % AlgName   : name of algorithm (in string format) for computation of neighbor areas
 %             'FA'    : FA algorithm
 %             'PA-AC' : PA-AC algorithm
@@ -53,6 +58,7 @@
 % r_hat_NA  : array of reference lengths of neighbor bonds for all nodes (2D array for most cases)
 % x_hat_NA  : array of x-coordinates of quadrature points for all nodes (2D array for most cases)
 % y_hat_NA  : array of y-coordinates of quadrature points for all nodes (2D array for most cases)
+% c_NA      : array of per-bond micromodulus function values (for Anisotropic model)
 
 % Discussion:
 % ----------
@@ -61,6 +67,7 @@
 % - neighbor area (Vk)
 % - reference bond length (rk_hat)
 % - coordinates of quadrature point (xk_hat and yk_hat)
+% - for the Anisotropic model, the micromodulus function
 
 % For the case of a uniform grid over a rectangular domain (flag_RDUG = 1), 
 % the function employs an efficient algorithm to loop over the cells that
@@ -73,10 +80,17 @@
 % peridynamic models based on analytical calculations, Computer Methods in 
 % Applied Mechanics and Engineering 282 (2014): 184–217.
 
-function [u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA] = NeighborList(Nx,Ny,xx,yy,xx1,yy1,M,del,dx,dy,VV,omega,AlgName,flag_RDUG)
+function [u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA,c_NA] = NeighborList(Nx,Ny,xx,yy,xx1,yy1,M,del,dx,dy,VV,omega,model,m,Lambda,AlgName,flag_RDUG)
 
     % Tolerance
     tol = 1E-15;
+
+    % Set default m and Lambda to avoid errors if not using Anisotropic
+    % model
+    if ~strcmp(model, 'Anisotropic')
+        m = 1.0;
+        Lambda = zeros(2, 2, 2, 2);
+    end
 
     if flag_RDUG == 1
 
@@ -168,6 +182,7 @@ function [u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA] = NeighborList(Nx,Ny,xx,yy
             r_hat_NA = zeros(Nnodes,1); % Array of reference lengths of neighbor bonds for all nodes
             x_hat_NA = zeros(Nnodes,1); % Array of x-coordinates of quadrature points for all nodes
             y_hat_NA = zeros(Nnodes,1); % Array of y-coordinates of quadrature points for all nodes
+            c_NA     = zeros(Nnodes,1); % Array of micromodulus values for all nodes
 
             % Compute maximum number of one-sided neighbor cells 
             % overlapping with the neighborhood of a source node
@@ -191,6 +206,7 @@ function [u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA] = NeighborList(Nx,Ny,xx,yy
                     r_hatVec = zeros(1,((2*Nn+1)^2)-1); % Array of reference lengths of neighbor bonds for source node ui
                     x_hatVec = zeros(1,((2*Nn+1)^2)-1); % Array of x-coordinates of quadrature points for source node ui
                     y_hatVec = zeros(1,((2*Nn+1)^2)-1); % Array of y-coordinates of quadrature points for source node ui
+                    c_hatVec = zeros(1,((2*Nn+1)^2)-1); % Array of micromodulus function values for source node ui
 
                     % Counter initialization
                     counter = 0;
@@ -243,6 +259,9 @@ function [u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA] = NeighborList(Nx,Ny,xx,yy
                                             % Evaluate influence function
                                             [IFk] = InfluenceFunction(omega,rk_hat,del);
 
+                                            % Evaluate micromodulus function
+                                            Ck = AnisotropicMicromodulus([xx(uk) - xx(ui), yy(uk) - yy(ui)], m, Lambda);
+
                                             % Update counter
                                             counter = counter + 1;
 
@@ -258,7 +277,8 @@ function [u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA] = NeighborList(Nx,Ny,xx,yy
                                             x_hatVec(counter) = xk_hat;
                                             % y-coordinate of quadrature point associated to bond ui-uk
                                             y_hatVec(counter) = yk_hat;
-
+                                            % micromodulus function value for bond ui-ui
+                                            c_hatVec(counter) = Ck;
                                         end
                                     end
                                 end
@@ -273,7 +293,7 @@ function [u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA] = NeighborList(Nx,Ny,xx,yy
                     r_hat_NA(ui,1:counter) = r_hatVec(1:counter);
                     x_hat_NA(ui,1:counter) = x_hatVec(1:counter);
                     y_hat_NA(ui,1:counter) = y_hatVec(1:counter);
-
+                    c_NA(ui,1:counter)     = c_hatVec(1:counter);
                 end
             end
 
@@ -313,6 +333,7 @@ function [u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA] = NeighborList(Nx,Ny,xx,yy
         r_hat_NA = zeros(Nnodes,1); % Array of reference lengths of neighbor bonds for all nodes
         x_hat_NA = zeros(Nnodes,1); % Array of x-coordinates of quadrature points for all nodes
         y_hat_NA = zeros(Nnodes,1); % Array of y-coordinates of quadrature points for all nodes
+        c_NA     = zeros(Nnodes,1); % Array of micromoduls function values for all nodes
 
         % Loop through all nodes ui:
         for ui = 1:Nnodes
@@ -324,6 +345,7 @@ function [u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA] = NeighborList(Nx,Ny,xx,yy
             r_hatVec = []; % Array of reference lengths of neighbor bonds for source node ui
             x_hatVec = []; % Array of x-coordinates of quadrature points for source node ui
             y_hatVec = []; % Array of y-coordinates of quadrature points for source node ui
+            c_hatVec = []; % Array of micromodulus function values for source node ui
             counter  = 0;
 
             % Loop through all nodes uk:
@@ -353,6 +375,9 @@ function [u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA] = NeighborList(Nx,Ny,xx,yy
                         % Evaluate influence function
                         [IFk] = InfluenceFunction(omega,rk_hat,del);
 
+                        % Evaluate micromodulus function
+                        Ck = AnisotropicMicromodulus([xx(uk) - xx(ui), yy(uk) - yy(ui)], m, Lambda);
+
                         % Update counter
                         counter = counter + 1;
 
@@ -368,6 +393,8 @@ function [u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA] = NeighborList(Nx,Ny,xx,yy
                         x_hatVec(counter) = xk_hat;
                         % y-coordinate of quadrature point associated to bond ui-uk
                         y_hatVec(counter) = yk_hat;
+                        % micromodulus function value for bond ui-uk
+                        c_hatVec(counter) = Ck;
 
                     end
                 end
@@ -380,6 +407,7 @@ function [u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA] = NeighborList(Nx,Ny,xx,yy
             r_hat_NA(ui,1:counter) = r_hatVec(1:counter);
             x_hat_NA(ui,1:counter) = x_hatVec(1:counter);
             y_hat_NA(ui,1:counter) = y_hatVec(1:counter);
+            c_NA(ui,1:counter)     = c_hatVec(1:counter);
 
         end
 

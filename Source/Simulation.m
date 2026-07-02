@@ -69,6 +69,23 @@ classdef Simulation < handle & matlab.mixin.Copyable
         % Fracture energy
         Go = 1;
 
+        % Young's modulus in x direction (for Anisotropic model)
+        E_1 = 1;
+
+        % Young's modulus in y direction (for Anisotropic model)
+        E_2 = 1;
+
+        % Poisson's ratio (for Anisotropic model)
+        nu_12 = 1/3;
+
+        % Coefficient of mutual influence of the second type along x axis
+        % (for Anisotropic model) 
+        eta_12_11 = 1;
+
+        % Coefficient of mutual influence of the second type along y axis
+        % (for Anisotropic model) 
+        eta_12_22 = 1;
+
         % ===== Body forces =====
         
         % x body force density function
@@ -126,6 +143,11 @@ classdef Simulation < handle & matlab.mixin.Copyable
         % (2D array for most cases)
         y_hat_NA
 
+        % array of micromodulus values for all bonds (only for Anisotropic
+        % model)
+        % (2D array for most cases)
+        c_NA
+
         % Whether a rectangular domain with uniform grid is being used 
         flag_RDUG = 0
         
@@ -142,6 +164,12 @@ classdef Simulation < handle & matlab.mixin.Copyable
 
         % Critical stretch constant
         so
+
+        % Peridynamic tensor (only for Anisotropic model)
+        Lambda
+
+        % Micromodulus normalization (only for Anisotropic model)
+        m
 
         % ===== Kinematic state =====
         
@@ -211,12 +239,13 @@ classdef Simulation < handle & matlab.mixin.Copyable
                 tic
             end
             
-            [nl{1:6}] = NeighborList( ...
+            [nl{1:7}] = NeighborList( ...
                 Nx, Ny, ...
                 self.xx, self.yy, xx1, yy1, M, ...
                 self.del, ...
                 dx, dy, ...
                 VV, self.omega, ...
+                self.model, self.m, self.Lambda, ...
                 self.AlgName, self.flag_RDUG ...
             );
             self.u_NA = nl{1};
@@ -225,6 +254,7 @@ classdef Simulation < handle & matlab.mixin.Copyable
             self.r_hat_NA = nl{4};
             self.x_hat_NA = nl{5}; 
             self.y_hat_NA = nl{6};
+            self.c_NA = nl{7};
             
             if self.flag_ShowProgress
                 fprintf('Generate neighbor list .......................... = %f (sec)\n',toc);
@@ -241,12 +271,13 @@ classdef Simulation < handle & matlab.mixin.Copyable
             saveVars.r_hat_NA = self.r_hat_NA;
             saveVars.x_hat_NA = self.x_hat_NA;
             saveVars.y_hat_NA = self.y_hat_NA;
+            saveVars.c_NA = self.c_NA;
             saveVars.flag_RDUG = self.flag_RDUG;
 
             save(GridFileOut, "-struct", "saveVars", ...
                 "xx", "yy", ...
                 "u_NA", "IF_NA", "V_NA", ...
-                "r_hat_NA", "x_hat_NA", "y_hat_NA", ...
+                "r_hat_NA", "x_hat_NA", "y_hat_NA", "c_NA", ...
                 "flag_RDUG" ...
             );
 
@@ -259,7 +290,7 @@ classdef Simulation < handle & matlab.mixin.Copyable
             loadVars = {
                 "xx", "yy", ...
                 "u_NA", "IF_NA", "V_NA", ...
-                "r_hat_NA", "x_hat_NA", "y_hat_NA", ...
+                "r_hat_NA", "x_hat_NA", "y_hat_NA", "c_NA", ...
                 "flag_RDUG"
             };
 
@@ -272,6 +303,11 @@ classdef Simulation < handle & matlab.mixin.Copyable
             self.r_hat_NA = in.r_hat_NA;
             self.x_hat_NA = in.x_hat_NA;
             self.y_hat_NA = in.y_hat_NA;
+            if isfield(in, "c_NA")
+                self.c_NA = in.c_NA;
+            else
+                self.c_NA = [];
+            end
             self.flag_RDUG = in.flag_RDUG;
 
             if self.flag_ShowProgress
@@ -333,7 +369,12 @@ classdef Simulation < handle & matlab.mixin.Copyable
                 tic
             end
             
-            [self.c, self.so] = PDBondConstants(self.omega, self.del, self.E, self.Go, self.model, self.PlanarModel);
+            if ~strcmp(self.model, 'Anisotropic')
+                [self.c, self.so] = PDBondConstants(self.omega, self.del, self.E, self.Go, self.model, self.PlanarModel);
+            else
+                self.m = PDAnisotropicNormalization(self.omega, self.del);
+                self.Lambda = PDTensor(self.E_1, self.E_2, self.nu_12, self.eta_12_11, self.eta_12_22);
+            end
             
             if self.flag_ShowProgress
                 fprintf('Compute PD constants ............................ = %f (sec)\n', toc)
@@ -363,10 +404,16 @@ classdef Simulation < handle & matlab.mixin.Copyable
                 tic
             end
             
+            if strcmp(self.model, 'Anisotropic')
+                micromodulus = self.c_NA;
+            else
+                micromodulus = self.c;
+            end
+
             [self.Fv, self.Fw, self.W] = ForceEnergyDensity( ...
                 self.xx, self.yy, ...
                 self.v, self.w, ...
-                self.c, self.u_NA, self.IF_NA, self.V_NA, ...
+                micromodulus, self.u_NA, self.IF_NA, self.V_NA, ...
                 self.r_hat_NA, self.x_hat_NA, self.y_hat_NA, ...
                 self.model, self.flag_RDUG ...
             );
@@ -498,6 +545,20 @@ classdef Simulation < handle & matlab.mixin.Copyable
         end
 
         function Solve(self)
+            if strcmp(self.model, 'Anisotropic') 
+                if self.flag_BB
+                    error("Cannot use bond-breaking with Anisotropic model.");
+                end
+
+                if ~strcmp(self.PlanarModel, 'Pure')
+                    error("Anisotropic model can only be used with Pure planar elasticity model.");
+                end
+            end
+
+            if strcmp(self.PlanarModel, 'Pure') && ~strcmp(self.model, 'Anisotropic')
+                error("Pure planar elasticity model can only be used with Anisotropic model");
+            end
+
             self.k = 0;
             self.t = self.Ti;
             tVec = self.Ti : self.dt : self.Tf;
@@ -509,6 +570,12 @@ classdef Simulation < handle & matlab.mixin.Copyable
             
             self.ComputeForceEnergyDensity();
             self.ComputeBodyForceDensity();
+
+            if strcmp(self.model, 'Anisotropic')
+                micromodulus = self.c_NA;
+            else
+                micromodulus = self.c;
+            end
 
             % Loop over time steps
             for n = 1:Nt-1
@@ -523,7 +590,7 @@ classdef Simulation < handle & matlab.mixin.Copyable
                     self.dt, ...
                     self.u_NA, self.IF_NA, self.V_NA, ...
                     self.r_hat_NA, self.x_hat_NA, self.y_hat_NA, ...
-                    self.rho, self.c, self.model, ...
+                    self.rho, micromodulus, self.model, ...
                     self.flag_RDUG, self.so, ...
                     self.mask_nofail, self.flag_BB ...
                 );
