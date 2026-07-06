@@ -12,18 +12,28 @@ sim.flag_ShowProgress = 0;
 sim.bvfunc = @(x, y, t) 0.0*x;
 sim.bwfunc = @(x, y, t) 0.0*y;
 
+% Material properties
+sim.E_1 = 1.0;
+sim.E_2 = 1.0;
+sim.eta_12_11 = 0.0;
+sim.eta_12_22 = 0.0;
+sim.nu_12 = 1/3;
+sim.rho = 1.0;
+sim.model = 'Anisotropic';
+sim.PlanarModel = 'Pure';
+
 sim.Ti = 0.0;
 sim.Tf = 1.8;
 sim.dt = 0.01;
-sim.LoadGrid("GridFile1.mat");
 Xo = 0.0;
 Xn = 5.0;
 Yo = 0.0;
 Yn = 5.0;
 sim.ComputePDConstants();
+sim.LoadGrid("GridFile-iso1.mat");
 
 numModes = 16;
-beta = 4.0;
+beta = 1.0;
 gamma = 2.5;
 scale = 0.0075;
 area = (Xn - Xo) * (Yn - Yo);
@@ -40,17 +50,17 @@ if datasetType == "inspect"
     numChunks = 1;
     datasetSize = 1;
     randomSeed = 1234;
-    datasetName = "inspect33.ol.h5";
+    datasetName = "inspect34.ol.h5";
 elseif datasetType == "test"
     numChunks = 32;
     datasetSize = 500;
     randomSeed = 1234;
-    datasetName = "test33.ol.h5";
+    datasetName = "test34.ol.h5";
 elseif datasetType == "train"
     numChunks = 32;
     datasetSize = 3000;
     randomSeed = 2026;
-    datasetName = "train33.ol.h5";
+    datasetName = "train34.ol.h5";
 end
 
 xy = [sim.xx, sim.yy];

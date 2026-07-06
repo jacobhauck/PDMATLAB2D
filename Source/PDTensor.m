@@ -10,7 +10,7 @@ function Lambda = PDTensor(E_1, E_2, nu_12, eta_12_11, eta_12_22)
         eta_12_11/E_1, eta_12_22/E_2, 1/G_12
     ];
     det_s = det(s);
-
+    
     cauchy = zeros(2, 2, 2, 2);  % Only need the independent components
     cauchy(1, 1, 1, 1) = (E_2 - G_12 * eta_12_22^2) / (E_2^2*G_12*det_s);
     cauchy(1, 1, 2, 2) = (E_2*nu_12 + G_12*eta_12_11*eta_12_22) / (E_1*E_2*G_12*det_s);

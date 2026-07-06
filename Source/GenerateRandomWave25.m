@@ -40,7 +40,7 @@ if datasetType == "inspect"
     numChunks = 1;
     datasetSize = 1;
     randomSeed = 1234;
-    datasetName = "inpsect25.ol.h5";
+    datasetName = "inspect25.ol.h5";
 elseif datasetType == "test"
     numChunks = 32;
     datasetSize = 500;
