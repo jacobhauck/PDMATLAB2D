@@ -52,6 +52,9 @@
 %               associated to it which shares the same number)
 % flag_BB     : if == 1, then the function allows bond breaking
 %               if == 0, then the function does not allow bond breaking
+% Nx          : Number of points in x direction (only used for 'Classical'
+%               model)
+% E           : Young's modulus (only used for 'Classical' model)
 
 % Output
 % ------
@@ -84,7 +87,7 @@
 %
 % end
 
-function [v,w,Vv,Vw,Fv,Fw,bv,bw,W,u_NA] = TimeIntegrator(TimeScheme,xx,yy,v,w,Vv,Vw,Fv,Fw,bv,bw,t,bvfunc,bwfunc,dt,u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA,rho,c,model,flag_RDUG,so,mask_nofail,flag_BB)
+function [v,w,Vv,Vw,Fv,Fw,bv,bw,W,u_NA] = TimeIntegrator(TimeScheme,xx,yy,v,w,Vv,Vw,Fv,Fw,bv,bw,t,bvfunc,bwfunc,dt,u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA,rho,c,model,flag_RDUG,so,mask_nofail,flag_BB,Nx,E)
 
     % --------------------------------------------------------------------
     %              Velocity Verlet time-integration scheme
@@ -122,7 +125,7 @@ function [v,w,Vv,Vw,Fv,Fw,bv,bw,W,u_NA] = TimeIntegrator(TimeScheme,xx,yy,v,w,Vv
         end
         
         % Compute internal force density and macroelastic energy density at t+dt for all nodes
-        [Fv,Fw,W] = ForceEnergyDensity(xx,yy,v,w,c,u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA,model,flag_RDUG);
+        [Fv,Fw,W] = ForceEnergyDensity(xx,yy,v,w,c,u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA,model,flag_RDUG,Nx,E);
 
         % Compute body force density at t+dt for all nodes 
         bv = bvfunc(xx,yy,t+dt); % x-component of body force density

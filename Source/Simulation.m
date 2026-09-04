@@ -41,6 +41,9 @@ classdef Simulation < handle & matlab.mixin.Copyable
         % Video files being written
         vidfile
 
+        % Video frame rate
+        videoFrameRate = 20
+
         % ===== Peridynamic Model =====
         
         % Constitutive model
@@ -150,6 +153,9 @@ classdef Simulation < handle & matlab.mixin.Copyable
 
         % Whether a rectangular domain with uniform grid is being used 
         flag_RDUG = 0
+
+        % Number of points in x direction (only valid if flag_RDUG == 1)
+        Nx
         
         % Mask for no-fail condition using current discretization
         mask_nofail
@@ -227,6 +233,7 @@ classdef Simulation < handle & matlab.mixin.Copyable
             % Flag for Rectangular Domain Uniform Grid (RDUG)
             if abs(dx - dy) < tol 
                 self.flag_RDUG = 1;
+                self.Nx = Nx;
             else
                 self.flag_RDUG = 0;
             end
@@ -273,12 +280,13 @@ classdef Simulation < handle & matlab.mixin.Copyable
             saveVars.y_hat_NA = self.y_hat_NA;
             saveVars.c_NA = self.c_NA;
             saveVars.flag_RDUG = self.flag_RDUG;
+            saveVars.Nx = self.Nx;
 
             save(GridFileOut, "-struct", "saveVars", ...
                 "xx", "yy", ...
                 "u_NA", "IF_NA", "V_NA", ...
                 "r_hat_NA", "x_hat_NA", "y_hat_NA", "c_NA", ...
-                "flag_RDUG" ...
+                "flag_RDUG", "Nx" ...
             );
 
             if self.flag_ShowProgress
@@ -291,7 +299,7 @@ classdef Simulation < handle & matlab.mixin.Copyable
                 "xx", "yy", ...
                 "u_NA", "IF_NA", "V_NA", ...
                 "r_hat_NA", "x_hat_NA", "y_hat_NA", "c_NA", ...
-                "flag_RDUG"
+                "flag_RDUG", "Nx"
             };
 
             in = load(GridFileIn, loadVars{:});
@@ -308,7 +316,20 @@ classdef Simulation < handle & matlab.mixin.Copyable
             else
                 self.c_NA = [];
             end
+            
             self.flag_RDUG = in.flag_RDUG;
+            if isfield(in, "Nx")
+                self.Nx = in.Nx;
+            else
+                self.Nx = [];
+                if self.flag_RDUG == 1
+                    fprintf( ...
+                        "WARNING: Failed to load number of grid points Nx " + ...
+                        "from grid file. Please set Nx if you intend to use " + ...
+                        "the classical elasticity model.\n" ...
+                    )
+                end
+            end
 
             if self.flag_ShowProgress
                 fprintf("Loaded grid from file: %s\n", GridFileIn);
@@ -415,7 +436,7 @@ classdef Simulation < handle & matlab.mixin.Copyable
                 self.v, self.w, ...
                 micromodulus, self.u_NA, self.IF_NA, self.V_NA, ...
                 self.r_hat_NA, self.x_hat_NA, self.y_hat_NA, ...
-                self.model, self.flag_RDUG ...
+                self.model, self.flag_RDUG, self.Nx, self.E ...
             );
             
             if self.flag_ShowProgress
@@ -466,7 +487,7 @@ classdef Simulation < handle & matlab.mixin.Copyable
 
                 % Open video file
                 self.vidfile(nplot) = VideoWriter(video_filename, 'MPEG-4');
-                self.vidfile(nplot).FrameRate = video_frate;
+                self.vidfile(nplot).FrameRate = self.videoFrameRate;
                 open(self.vidfile(nplot));
             end
 
@@ -544,7 +565,7 @@ classdef Simulation < handle & matlab.mixin.Copyable
             end
         end
 
-        function Solve(self)
+        function Solve(self, varargin)
             if strcmp(self.model, 'Anisotropic') 
                 if self.flag_BB
                     error("Cannot use bond-breaking with Anisotropic model.");
@@ -577,6 +598,12 @@ classdef Simulation < handle & matlab.mixin.Copyable
                 micromodulus = self.c;
             end
 
+            % Apply explicit conditions
+            if nargin > 1
+                condition = varargin{1};
+                condition(self, 0);
+            end
+
             % Loop over time steps
             for n = 1:Nt-1
                 [nextstate{1:10}] = TimeIntegrator( ...
@@ -592,7 +619,8 @@ classdef Simulation < handle & matlab.mixin.Copyable
                     self.r_hat_NA, self.x_hat_NA, self.y_hat_NA, ...
                     self.rho, micromodulus, self.model, ...
                     self.flag_RDUG, self.so, ...
-                    self.mask_nofail, self.flag_BB ...
+                    self.mask_nofail, self.flag_BB, ...
+                    self.Nx, self.E ...
                 );
 
                 self.v = nextstate{1};
@@ -605,7 +633,12 @@ classdef Simulation < handle & matlab.mixin.Copyable
                 self.bw = nextstate{8};
                 self.W = nextstate{9};
                 self.u_NA = nextstate{10};
-            
+                
+                % Apply explicit conditions
+                if nargin > 1
+                    condition(self, n);
+                end
+
                 % Time-integration step display
                 if self.flag_ShowProgress && (mod(n, self.TimeStepDisplayFrequency) == 0)
                     fprintf('Time integration (n = %4g / %g ) = %f (sec)\n', n, Nt-1, toc)

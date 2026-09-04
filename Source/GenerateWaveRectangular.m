@@ -2,8 +2,8 @@
 sim = Simulation();
 
 % Turn off progress reporting and video output
-sim.flag_DynamicPlotting = 0;
-sim.flag_video = 0;
+sim.flag_DynamicPlotting = 1;
+sim.flag_video = 1;
 sim.flag_ShowProgress = 0;
 
 % Set zero body force
@@ -35,6 +35,16 @@ if ~exist("GridFile1-rectangular.mat", "file")
 else
     sim.LoadGrid("GridFile1-rectangular.mat");
 end
+
+% Plot settings
+sim.PlotSettings = {
+    'Displacement x' , 'self.v'  , '$v$' ,    8    ,     [-0.025 0.025]   ,   'parula'  , [Xo Xn Yo Yn] , 'Reference';
+    'Displacement y' , 'self.w'  , '$w$' ,    8    ,     [-0.025 0.025]   ,   'parula'  , [Xo Xn Yo Yn] , 'Reference'
+};
+sim.DynamicPlotFrequency = 2;
+sim.videoFrameRate = 20;
+sim.OutputName = 'WaveRectangular';
+sim.CreateVideoFiles();
 
 % Dataset
 numChunks = 1;

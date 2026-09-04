@@ -31,11 +31,16 @@
 % y_hat_NA   : array of y-coordinates of quadrature points for all nodes 
 % model      : constitutive model
 %              'GPMB'         : generalized prototype microelastic brittle
-%              'Anisotropoic' : anisotropic PMB model 
+%              'Anisotropoic' : anisotropic PMB model
+%              'Classical'    : classical elasticity model with homogeneous
+%                               Dirichlet boundary conditions
 % flag_RDUG  : if == 1, then the grid is uniform over a rectangular domain
 %              (dx = dy); the flag name RDUG stands for "Rectangular Domain
 %              Uniform Grid" 
 %              if == 0, then the grid is a general grid
+% Nx         : Number of nodes in x direction. Only used for 'Classical'
+%              model
+% E          : Young's modulus, if using 'Classical' model
 
 % Output
 % ------
@@ -61,7 +66,7 @@
 %
 %
 
-function [Fv,Fw,W] = ForceEnergyDensity(xx,yy,v,w,c,u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA,model,flag_RDUG)
+function [Fv,Fw,W] = ForceEnergyDensity(xx,yy,v,w,c,u_NA,IF_NA,V_NA,r_hat_NA,x_hat_NA,y_hat_NA,model,flag_RDUG,Nx,E)
 
     % --------------------------------------------------------------------
     %                           GPMB model
@@ -450,8 +455,190 @@ function [Fv,Fw,W] = ForceEnergyDensity(xx,yy,v,w,c,u_NA,IF_NA,V_NA,r_hat_NA,x_h
 
         end
 
-    else
+    elseif strcmp(model, 'Classical')
+        if flag_RDUG ~= 1
+            error('Classical elasticity model requires rectangular domain with uniform grid.');
+        end
 
+        % Number of nodes
+        Nnodes = length(xx);
+        Ny = round(Nnodes / Nx);
+    
+        % Initialize internal force density components and macroelastic energy density arrays
+        Fv = zeros(Nnodes,1); % Array of x-components of internal force density for all nodes
+        Fw = zeros(Nnodes,1); % Array of y-components of internal force density for all nodes
+        W  = zeros(Nnodes,1); % Array of macroelastic energy density for all nodes
+        
+        indices_x = zeros(Nnodes, 1);
+        indices_y = zeros(Nnodes, 1);
+        for i = 1:Ny
+            for j = 1:Nx
+                c = (i-1) * Nx + j;
+                indices_y(c) = i;
+                indices_x(c) = j;
+            end
+        end
+        indices = sub2ind([Nx, Ny], indices_x, indices_y);
+        
+        dx = xx(2) - xx(1);
+        dy = yy(1 + Nx) - yy(1);
+
+        v_ = zeros(Nx, Ny);
+        w_ = zeros(Nx, Ny);
+        v_(indices) = v;
+        w_(indices) = w;
+
+        d2v_dx2 = zeros(Nx, Ny);
+        d2v_dx2(2:end-1, :) = (v_(3:end, :) - 2*v_(2:end-1, :) + v_(1:end-2, :)) ./ (dx^2);
+        d2v_dx2(1, :) = (v_(2, :) - 2*v_(1, :) + 0*v_(end, :)) ./ (dx^2);
+        d2v_dx2(end, :) = (0*v_(1, :) - 2*v_(end, :) + v_(end-1, :)) ./ (dx^2);
+
+        d2w_dy2 = zeros(Nx, Ny);
+        d2w_dy2(:, 2:end-1) = (w_(:, 3:end) - 2*w_(:, 2:end-1) + w_(:, 1:end-2)) ./ (dy^2);
+        d2w_dy2(:, 1) = (w_(:, 2) - 2*w_(:, 1) + 0*w_(:, end)) ./ (dy^2);
+        d2w_dy2(:, end) = (0*w_(:, 1) - 2*w_(:, end) + w_(:, end-1)) ./ (dy^2);
+
+        lap_v = zeros(Nx, Ny);
+        lap_v(2:end-1, 2:end-1) = (v_(3:end, 3:end) + v_(1:end-2, 1:end-2) + v_(1:end-2, 3:end) + v_(3:end, 1:end-2) - 4*v_(2:end-1, 2:end-1)) / (2*dx^2);
+        lap_v(1, 2:end-1) = (v_(2, 3:end) + 0*v_(end, 1:end-2) + 0*v_(end, 3:end) + v_(2, 1:end-2) - 4*v_(1, 2:end-1)) / (2*dx^2);
+        lap_v(end, 2:end-1) = (0*v_(1, 3:end) + v_(end-1, 1:end-2) + v_(end-1, 3:end) + 0*v_(1, 1:end-2) - 4*v_(end, 2:end-1)) / (2*dx^2);
+        lap_v(2:end-1, 1) = (v_(3:end, 2) + 0*v_(1:end-2, end) + v_(1:end-2, 2) + 0*v_(3:end, end) - 4*v_(2:end-1, 1)) / (2*dx^2);
+        lap_v(2:end-1, end) = (0*v_(3:end, 1) + v_(1:end-2, end-1) + 0*v_(1:end-2, 1) + v_(3:end, end-1) - 4*v_(2:end-1, end)) / (2*dx^2);
+        lap_v(1, 1) = (v_(2, 2) + 0*v_(end, end) + 0*v_(end, 2) + 0*v_(2, end) - 4*v_(1, 1)) / (2*dx^2);
+        lap_v(1, end) = (0*v_(2, 1) + 0*v_(end, end-1) + 0*v_(end, 1) + v_(2, end-1) - 4*v_(1, end)) / (2*dx^2);
+        lap_v(end, 1) = (0*v_(1, 2) + 0*v_(end-1, end) + v_(end-1, 2) + 0*v_(1, end) - 4*v_(end, 1)) / (2*dx^2);
+        lap_v(end, end) = (0*v_(1, 1) + v_(end-1, end-1) + 0*v_(end-1, 1) + 0*v_(1, end-1) - 4*v_(end, end)) / (2*dx^2);
+
+        lap_w = zeros(Nx, Ny);
+        lap_w(2:end-1, 2:end-1) = (w_(3:end, 3:end) + w_(1:end-2, 1:end-2) + w_(1:end-2, 3:end) + w_(3:end, 1:end-2) - 4*w_(2:end-1, 2:end-1)) / (2*dx^2);
+        lap_w(1, 2:end-1) = (w_(2, 3:end) + 0*w_(end, 1:end-2) + 0*w_(end, 3:end) + w_(2, 1:end-2) - 4*w_(1, 2:end-1)) / (2*dx^2);
+        lap_w(end, 2:end-1) = (0*w_(1, 3:end) + w_(end-1, 1:end-2) + w_(end-1, 3:end) + 0*w_(1, 1:end-2) - 4*w_(end, 2:end-1)) / (2*dx^2);
+        lap_w(2:end-1, 1) = (w_(3:end, 2) + 0*w_(1:end-2, end) + w_(1:end-2, 2) + 0*w_(3:end, end) - 4*w_(2:end-1, 1)) / (2*dx^2);
+        lap_w(2:end-1, end) = (0*w_(3:end, 1) + w_(1:end-2, end-1) + 0*w_(1:end-2, 1) + w_(3:end, end-1) - 4*w_(2:end-1, end)) / (2*dx^2);
+        lap_w(1, 1) = (w_(2, 2) + 0*w_(end, end) + 0*w_(end, 2) + 0*w_(2, end) - 4*w_(1, 1)) / (2*dx^2);
+        lap_w(1, end) = (0*w_(2, 1) + 0*w_(end, end-1) + 0*w_(end, 1) + w_(2, end-1) - 4*w_(1, end)) / (2*dx^2);
+        lap_w(end, 1) = (0*w_(1, 2) + 0*w_(end-1, end) + w_(end-1, 2) + 0*w_(1, end) - 4*w_(end, 1)) / (2*dx^2);
+        lap_w(end, end) = (0*w_(1, 1) + w_(end-1, end-1) + 0*w_(end-1, 1) + 0*w_(1, end-1) - 4*w_(end, end)) / (2*dx^2);
+        
+        d2v_dxdy = zeros(Nx, Ny);
+        d2v_dxdy(2:end-1, 2:end-1) = (v_(3:end, 3:end) - v_(3:end, 1:end-2) - v_(1:end-2, 3:end) + v_(1:end-2, 1:end-2)) / (4*dx*dy);
+        d2v_dxdy(1, 2:end-1) = (v_(2, 3:end) - v_(2, 1:end-2) - 0*v_(end, 3:end) + 0*v_(end, 1:end-2)) / (4*dx*dy);
+        d2v_dxdy(end, 2:end-1) = (0*v_(1, 3:end) - 0*v_(1, 1:end-2) - v_(end-1, 3:end) + v_(end-1, 1:end-2)) / (4*dx*dy);
+        d2v_dxdy(2:end-1, 1) = (v_(3:end, 2) - 0*v_(3:end, end) - v_(1:end-2, 2) + 0*v_(1:end-2, end)) / (4*dx*dy);
+        d2v_dxdy(2:end-1, end) = (0*v_(3:end, 1) - v_(3:end, end-1) - 0*v_(1:end-2, 1) + v_(1:end-2, end-1)) / (4*dx*dy);
+        d2v_dxdy(1, 1) = (v_(2, 2) - 0*v_(2, end) - 0*v_(end, 2) + 0*v_(end, end)) / (4*dx*dy);
+        d2v_dxdy(1, end) = (0*v_(2, 1) - v_(2, end-1) - 0*v_(end, 1) + 0*v_(end, end-1)) / (4*dx*dy);
+        d2v_dxdy(end, 1) = (0*v_(1, 2) - 0*v_(1, end) - v_(end-1, 2) + 0*v_(end-1, end)) / (4*dx*dy);
+        d2v_dxdy(end, end) = (0*v_(1, 1) - 0*v_(1, end-1) - 0*v_(end-1, 1) + v_(end-1, end-1)) / (4*dx*dy);
+
+        d2w_dxdy = zeros(Nx, Ny);
+        d2w_dxdy(2:end-1, 2:end-1) = (w_(3:end, 3:end) - w_(3:end, 1:end-2) - w_(1:end-2, 3:end) + w_(1:end-2, 1:end-2)) / (4*dx*dy);
+        d2w_dxdy(1, 2:end-1) = (w_(2, 3:end) - w_(2, 1:end-2) - 0*w_(end, 3:end) + 0*w_(end, 1:end-2)) / (4*dx*dy);
+        d2w_dxdy(end, 2:end-1) = (0*w_(1, 3:end) - 0*w_(1, 1:end-2) - w_(end-1, 3:end) + w_(end-1, 1:end-2)) / (4*dx*dy);
+        d2w_dxdy(2:end-1, 1) = (w_(3:end, 2) - 0*w_(3:end, end) - w_(1:end-2, 2) + 0*w_(1:end-2, end)) / (4*dx*dy);
+        d2w_dxdy(2:end-1, end) = (0*w_(3:end, 1) - w_(3:end, end-1) - 0*w_(1:end-2, 1) + w_(1:end-2, end-1)) / (4*dx*dy);
+        d2w_dxdy(1, 1) = (w_(2, 2) - 0*w_(2, end) - 0*w_(end, 2) + 0*w_(end, end)) / (4*dx*dy);
+        d2w_dxdy(1, end) = (0*w_(2, 1) - w_(2, end-1) - 0*w_(end, 1) + 0*w_(end, end-1)) / (4*dx*dy);
+        d2w_dxdy(end, 1) = (0*w_(1, 2) - 0*w_(1, end) - w_(end-1, 2) + 0*w_(end-1, end)) / (4*dx*dy);
+        d2w_dxdy(end, end) = (0*w_(1, 1) - 0*w_(1, end-1) - 0*w_(end-1, 1) + w_(end-1, end-1)) / (4*dx*dy);
+
+        Fv_ = (3/4*E) * (d2v_dx2 + d2w_dxdy + (1/2) * lap_v);
+        Fw_ = (3/4*E) * (d2w_dy2 + d2v_dxdy + (1/2) * lap_w);
+        Fv(:) = Fv_(indices);
+        Fw(:) = Fw_(indices);
+
+    elseif strcmp(model, 'Classical-periodic')
+        if flag_RDUG ~= 1
+            error('Classical elasticity model requires rectangular domain with uniform grid.');
+        end
+
+        % Number of nodes
+        Nnodes = length(xx);
+        Ny = round(Nnodes / Nx);
+    
+        % Initialize internal force density components and macroelastic energy density arrays
+        Fv = zeros(Nnodes,1); % Array of x-components of internal force density for all nodes
+        Fw = zeros(Nnodes,1); % Array of y-components of internal force density for all nodes
+        W  = zeros(Nnodes,1); % Array of macroelastic energy density for all nodes
+        
+        indices_x = zeros(Nnodes, 1);
+        indices_y = zeros(Nnodes, 1);
+        for i = 1:Ny
+            for j = 1:Nx
+                c = (i-1) * Nx + j;
+                indices_y(c) = i;
+                indices_x(c) = j;
+            end
+        end
+        indices = sub2ind([Nx, Ny], indices_x, indices_y);
+        
+        dx = xx(2) - xx(1);
+        dy = yy(1 + Nx) - yy(1);
+
+        v_ = zeros(Nx, Ny);
+        w_ = zeros(Nx, Ny);
+        v_(indices) = v;
+        w_(indices) = w;
+
+        d2v_dx2 = zeros(Nx, Ny);
+        d2v_dx2(2:end-1, :) = (v_(3:end, :) - 2*v_(2:end-1, :) + v_(1:end-2, :)) ./ (dx^2);
+        d2v_dx2(1, :) = (v_(2, :) - 2*v_(1, :) + v_(end, :)) ./ (dx^2);
+        d2v_dx2(end, :) = (v_(1, :) - 2*v_(end, :) + v_(end-1, :)) ./ (dx^2);
+
+        d2w_dy2 = zeros(Nx, Ny);
+        d2w_dy2(:, 2:end-1) = (w_(:, 3:end) - 2*w_(:, 2:end-1) + w_(:, 1:end-2)) ./ (dy^2);
+        d2w_dy2(:, 1) = (w_(:, 2) - 2*w_(:, 1) + w_(:, end)) ./ (dy^2);
+        d2w_dy2(:, end) = (w_(:, 1) - 2*w_(:, end) + w_(:, end-1)) ./ (dy^2);
+
+        lap_v = zeros(Nx, Ny);
+        lap_v(2:end-1, 2:end-1) = (v_(3:end, 3:end) + v_(1:end-2, 1:end-2) + v_(1:end-2, 3:end) + v_(3:end, 1:end-2) - 4*v_(2:end-1, 2:end-1)) / (2*dx^2);
+        lap_v(1, 2:end-1) = (v_(2, 3:end) + v_(end, 1:end-2) + v_(end, 3:end) + v_(2, 1:end-2) - 4*v_(1, 2:end-1)) / (2*dx^2);
+        lap_v(end, 2:end-1) = (v_(1, 3:end) + v_(end-1, 1:end-2) + v_(end-1, 3:end) + v_(1, 1:end-2) - 4*v_(end, 2:end-1)) / (2*dx^2);
+        lap_v(2:end-1, 1) = (v_(3:end, 2) + v_(1:end-2, end) + v_(1:end-2, 2) + v_(3:end, end) - 4*v_(2:end-1, 1)) / (2*dx^2);
+        lap_v(2:end-1, end) = (v_(3:end, 1) + v_(1:end-2, end-1) + v_(1:end-2, 1) + v_(3:end, end-1) - 4*v_(2:end-1, end)) / (2*dx^2);
+        lap_v(1, 1) = (v_(2, 2) + v_(end, end) + v_(end, 2) + v_(2, end) - 4*v_(1, 1)) / (2*dx^2);
+        lap_v(1, end) = (v_(2, 1) + v_(end, end-1) + v_(end, 1) + v_(2, end-1) - 4*v_(1, end)) / (2*dx^2);
+        lap_v(end, 1) = (v_(1, 2) + v_(end-1, end) + v_(end-1, 2) + v_(1, end) - 4*v_(end, 1)) / (2*dx^2);
+        lap_v(end, end) = (v_(1, 1) + v_(end-1, end-1) + v_(end-1, 1) + v_(1, end-1) - 4*v_(end, end)) / (2*dx^2);
+
+        lap_w = zeros(Nx, Ny);
+        lap_w(2:end-1, 2:end-1) = (w_(3:end, 3:end) + w_(1:end-2, 1:end-2) + w_(1:end-2, 3:end) + w_(3:end, 1:end-2) - 4*w_(2:end-1, 2:end-1)) / (2*dx^2);
+        lap_w(1, 2:end-1) = (w_(2, 3:end) + w_(end, 1:end-2) + w_(end, 3:end) + w_(2, 1:end-2) - 4*w_(1, 2:end-1)) / (2*dx^2);
+        lap_w(end, 2:end-1) = (w_(1, 3:end) + w_(end-1, 1:end-2) + w_(end-1, 3:end) + w_(1, 1:end-2) - 4*w_(end, 2:end-1)) / (2*dx^2);
+        lap_w(2:end-1, 1) = (w_(3:end, 2) + w_(1:end-2, end) + w_(1:end-2, 2) + w_(3:end, end) - 4*w_(2:end-1, 1)) / (2*dx^2);
+        lap_w(2:end-1, end) = (w_(3:end, 1) + w_(1:end-2, end-1) + w_(1:end-2, 1) + w_(3:end, end-1) - 4*w_(2:end-1, end)) / (2*dx^2);
+        lap_w(1, 1) = (w_(2, 2) + w_(end, end) + w_(end, 2) + w_(2, end) - 4*w_(1, 1)) / (2*dx^2);
+        lap_w(1, end) = (w_(2, 1) + w_(end, end-1) + w_(end, 1) + w_(2, end-1) - 4*w_(1, end)) / (2*dx^2);
+        lap_w(end, 1) = (w_(1, 2) + w_(end-1, end) + w_(end-1, 2) + w_(1, end) - 4*w_(end, 1)) / (2*dx^2);
+        lap_w(end, end) = (w_(1, 1) + w_(end-1, end-1) + w_(end-1, 1) + w_(1, end-1) - 4*w_(end, end)) / (2*dx^2);
+        
+        d2v_dxdy = zeros(Nx, Ny);
+        d2v_dxdy(2:end-1, 2:end-1) = (v_(3:end, 3:end) - v_(3:end, 1:end-2) - v_(1:end-2, 3:end) + v_(1:end-2, 1:end-2)) / (4*dx*dy);
+        d2v_dxdy(1, 2:end-1) = (v_(2, 3:end) - v_(2, 1:end-2) - v_(end, 3:end) + v_(end, 1:end-2)) / (4*dx*dy);
+        d2v_dxdy(end, 2:end-1) = (v_(1, 3:end) - v_(1, 1:end-2) - v_(end-1, 3:end) + v_(end-1, 1:end-2)) / (4*dx*dy);
+        d2v_dxdy(2:end-1, 1) = (v_(3:end, 2) - v_(3:end, end) - v_(1:end-2, 2) + v_(1:end-2, end)) / (4*dx*dy);
+        d2v_dxdy(2:end-1, end) = (v_(3:end, 1) - v_(3:end, end-1) - v_(1:end-2, 1) + v_(1:end-2, end-1)) / (4*dx*dy);
+        d2v_dxdy(1, 1) = (v_(2, 2) - v_(2, end) - v_(end, 2) + v_(end, end)) / (4*dx*dy);
+        d2v_dxdy(1, end) = (v_(2, 1) - v_(2, end-1) - v_(end, 1) + v_(end, end-1)) / (4*dx*dy);
+        d2v_dxdy(end, 1) = (v_(1, 2) - v_(1, end) - v_(end-1, 2) + v_(end-1, end)) / (4*dx*dy);
+        d2v_dxdy(end, end) = (v_(1, 1) - v_(1, end-1) - v_(end-1, 1) + v_(end-1, end-1)) / (4*dx*dy);
+
+        d2w_dxdy = zeros(Nx, Ny);
+        d2w_dxdy(2:end-1, 2:end-1) = (w_(3:end, 3:end) - w_(3:end, 1:end-2) - w_(1:end-2, 3:end) + w_(1:end-2, 1:end-2)) / (4*dx*dy);
+        d2w_dxdy(1, 2:end-1) = (w_(2, 3:end) - w_(2, 1:end-2) - w_(end, 3:end) + w_(end, 1:end-2)) / (4*dx*dy);
+        d2w_dxdy(end, 2:end-1) = (w_(1, 3:end) - w_(1, 1:end-2) - w_(end-1, 3:end) + w_(end-1, 1:end-2)) / (4*dx*dy);
+        d2w_dxdy(2:end-1, 1) = (w_(3:end, 2) - w_(3:end, end) - w_(1:end-2, 2) + w_(1:end-2, end)) / (4*dx*dy);
+        d2w_dxdy(2:end-1, end) = (w_(3:end, 1) - w_(3:end, end-1) - w_(1:end-2, 1) + w_(1:end-2, end-1)) / (4*dx*dy);
+        d2w_dxdy(1, 1) = (w_(2, 2) - w_(2, end) - w_(end, 2) + w_(end, end)) / (4*dx*dy);
+        d2w_dxdy(1, end) = (w_(2, 1) - w_(2, end-1) - w_(end, 1) + w_(end, end-1)) / (4*dx*dy);
+        d2w_dxdy(end, 1) = (w_(1, 2) - w_(1, end) - w_(end-1, 2) + w_(end-1, end)) / (4*dx*dy);
+        d2w_dxdy(end, end) = (w_(1, 1) - w_(1, end-1) - w_(end-1, 1) + w_(end-1, end-1)) / (4*dx*dy);
+
+        Fv_ = (3/4*E) * (d2v_dx2 + d2w_dxdy + (1/2) * lap_v);
+        Fw_ = (3/4*E) * (d2w_dy2 + d2v_dxdy + (1/2) * lap_w);
+        Fv(:) = Fv_(indices);
+        Fw(:) = Fw_(indices);
+    else
         error('Invalid model.')
 
     end

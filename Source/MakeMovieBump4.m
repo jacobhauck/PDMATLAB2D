@@ -1,66 +1,48 @@
-% Simulate wave propagation
+% Generates a dataset whose input u is the initial displacement field
+% and output v is the displacement field at a later time (sim.Tf).
+% The domain is a 5x5 square, discretized using a 200x200 grid.
+% The input displacement is sampled from a Gaussian random field, and bond
+% breaking is disabled.
 sim = Simulation();
 
-% Turn off progress reporting and video output
-sim.flag_DynamicPlotting = 1;
-sim.flag_video = 1;
+sim.flag_DynamicPlotting = 0;
+sim.flag_video = 0;
 sim.flag_ShowProgress = 0;
 
-% Set zero body force
 sim.bvfunc = @(x, y, t) 0.0*x;
 sim.bwfunc = @(x, y, t) 0.0*y;
 
-% Material properties
-sim.E_1 = 1.0;
-sim.E_2 = 1.0;
-sim.eta_12_11 = 0.0;
-sim.eta_12_22 = 0.0;
-sim.nu_12 = 0.1;
-sim.rho = 1.0;
-sim.model = 'Anisotropic';
-sim.PlanarModel = 'Pure';
-
-% Domain
 sim.Ti = 0.0;
 sim.Tf = 1.8;
 sim.dt = 0.01;
+sim.LoadGrid("GridFile1.mat");
 Xo = 0.0;
 Xn = 5.0;
 Yo = 0.0;
 Yn = 5.0;
 sim.ComputePDConstants();
-sim.GenerateGrid(Xo, Xn, Yo, Yn, 200, 200, false);
 
-% Plot settings
-sim.PlotSettings = {
-    'Displacement x' , 'self.v'  , '$v$' ,    8    ,     [-0.025 0.025]   ,   'parula'  , [Xo Xn Yo Yn] , 'Reference';
-    'Displacement y' , 'self.w'  , '$w$' ,    8    ,     [-0.025 0.025]   ,   'parula'  , [Xo Xn Yo Yn] , 'Reference'
-};
-sim.DynamicPlotFrequency = 2;
-sim.videoFrameRate = 20;
-sim.OutputName = 'WaveSquare';
-sim.CreateVideoFiles();
-
-% Dataset
-numChunks = 1;
-datasetSize = 1;
-randomSeed = 1234;
-datasetName = "waveSquare.ol.h5";
+numFrames = 32;
 
 xy = [sim.xx, sim.yy];
-generator = MakeGenerator();
-GenerateDataset(datasetName, datasetSize, numChunks, randomSeed, sim, xy, xy, 2, 2, generator);
+
+generator = MakeGenerator(numFrames);
+GenerateDataset('movieBump4.ol.h5', numFrames, 1, 1234, sim, xy, xy, 2, 2, generator);
 
 
-function generator = MakeGenerator()
+function generator = MakeGenerator(numFrames)
     function GenerateOne(simulation, outputFile, ~, sampleIndex, ~)
+        % Initial displacement functions
+        
+        % Tolerance
+        tol = 1E-15;
+        
         % Parameters
         xm    = 2.5;     % x-coordinate of pulse center 
         ym    = 2.5;     % y-coordinate of pulse center 
         A     = 0.025;   % amplitude of radial Gaussian distribution
-        sigma = 0.1;     % standard deviation of radial Gaussian distribution
+        sigma = 0.1;    % standard deviation of radial Gaussian distribution
         mu    = 6*sigma; % radial distance from pulse center of radial Gaussian distribution mean 
-        tol   = 1e-10;
         
         % Functions
         r      = @(x,y) sqrt((x-xm).^2+(y-ym).^2);                    % distance from pulse center
@@ -68,11 +50,11 @@ function generator = MakeGenerator()
         vofunc = @(x,y) uo(x,y).*(x-xm)./(r(x,y) + tol);              % x-component of initial displacement
         wofunc = @(x,y) uo(x,y).*(y-ym)./(r(x,y) + tol);              % y-component of initial displacement
 
-        
-        % Zero initial velocity
         Vvofunc = @(x,y) 0.*x + 0.*y; % x-component of initial velocity
         Vwofunc = @(x,y) 0.*x + 0.*y; % y-component of initial velocity
-    
+        
+        tRel = (sampleIndex - 1) / (numFrames - 1);
+        simulation.Tf = simulation.Ti + (simulation.Tf - simulation.Ti) * tRel;
         simulation.ImposeInitialConditions(vofunc, wofunc, Vvofunc, Vwofunc);
         u = [simulation.v, simulation.w];  % (numNodes, 2)
         
