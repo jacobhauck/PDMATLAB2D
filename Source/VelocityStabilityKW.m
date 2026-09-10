@@ -35,7 +35,7 @@ mask_bc = (Xo/4  - 0.25*dx < sim.xx) & (sim.xx < Xn/4 + 0.25*dx) & (Yo - dy < si
 CreateOLPDDataset("velocityKW.ol.h5", xy, xy, 2, 2, numFrames);
 velocities = linspace(velocityRange(1), velocityRange(2), velocitySteps);
 generator = MakeGenerator(mask_bc, velocities, Xo, Xn, Yo);
-GenerateDataset("velocityKW.ol.h5", velocitySteps, 1, 1234, sim, zeros(1, 1), xy, 1, 1, generator);
+GenerateDataset("velocityKW.ol.h5", velocitySteps, 8, 1234, sim, zeros(1, 1), xy, 1, 1, generator);
 
 
 function generator = MakeGenerator(mask_bc, velocities, Xo, Xn, Yo)
