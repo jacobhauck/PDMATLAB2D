@@ -27,7 +27,7 @@ sim.Nx = 200;
 
 numModes = 16;
 beta = 1.0;
-gamma = 1.5;
+gamma = 4.5;
 scale = 0.0075;
 area = (Xn - Xo) * (Yn - Yo);
 grf = GRF2DON(numModes, @(i, j) 1.0 ./ ((beta + i.^2 + j.^2) .^ (gamma/2)), [Xo, Yo, 2*Xn - Xo, 2*Yn - Yo]);
