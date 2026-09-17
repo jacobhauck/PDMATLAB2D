@@ -35,14 +35,14 @@ sim.mask_nofail = (abs(sim.yy) > Yn - sim.del);
 
 sim.ComputePDConstants();
 
-numChunks = 7;
-datasetSize = 7;
+numChunks = 6;
+datasetSize = 6;
 seed = 1234;
 
 sigma = 2E6;
 sigmaTop = 0.32;
 sigmaBot = 0.75;
-dt = [6.70E-08, 3.35E-08, 1.68E-08, 8.38E-09, 4.19E-09, 2.09E-09, 1.05E-09];
+dt = [6.70E-08, 3.35E-08, 1.68E-08, 8.38E-09, 4.19E-09, 2.09E-09];
 
 datasetName = "convergence3-FA.ol.h5";
 
