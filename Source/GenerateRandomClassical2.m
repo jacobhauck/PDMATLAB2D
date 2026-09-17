@@ -49,17 +49,17 @@ if datasetType == "inspect"
     numChunks = 1;
     datasetSize = 1;
     randomSeed = 1234;
-    datasetName = "inspectClassical1.ol.h5";
+    datasetName = "inspectClassical2.ol.h5";
 elseif datasetType == "test"
     numChunks = 32;
     datasetSize = 500;
     randomSeed = 1234;
-    datasetName = "testClassical1.ol.h5";
+    datasetName = "testClassical2.ol.h5";
 elseif datasetType == "train"
     numChunks = 32;
     datasetSize = 3000;
     randomSeed = 2026;
-    datasetName = "trainClassical1.ol.h5";
+    datasetName = "trainClassical2.ol.h5";
 end
 
 xy = [sim.xx, sim.yy];
