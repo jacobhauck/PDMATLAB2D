@@ -37,7 +37,7 @@ grf.aAmplitude = zeros(size(grf.aAmplitude));
 grf.bAmplitude = zeros(size(grf.bAmplitude));
 grf.cAmplitude = zeros(size(grf.cAmplitude));
 
-totalVar = sum(grf.amplitudeFn(grf.gx(), grf.gy()) .^ 2);
+totalVar = grf.totalVariance();
 alpha = sqrt(area * scale^2 / totalVar);
 fprintf("Computed alpha = %f\n", alpha);
 

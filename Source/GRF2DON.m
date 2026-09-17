@@ -27,27 +27,21 @@ classdef GRF2DON
         aky
         an
         aAmplitude
-        aCov
 
         bkx
         bky
         bn
         bAmplitude
-        bCov
         
         ckx
         cky
         cn
         cAmplitude
-        cCov
         
         dkx
         dky
         dn
         dAmplitude
-        dCov
-
-        cov
     end
 
     methods
@@ -100,37 +94,24 @@ classdef GRF2DON
             self.aky = (2*pi) * [gyAll; zeros(size(gCos)); gSin];
             self.an = [nAll; nCos; nSin];
             self.aAmplitude = [amplitudeAll; amplitudeCos; amplitudeSin];
-            self.aCov = self.aAmplitude .^ 2;
         
             % all shape (numModes^2 + numModes, 1)
             self.bkx = (2*pi) * [gxAll; zeros(size(gSin))];  
             self.bky = (2*pi) * [gyAll; gSin];
             self.bn = [nAll; nSin];
             self.bAmplitude = [amplitudeAll; amplitudeSin];
-            self.bCov = self.bAmplitude .^ 2;
 
             % all shape (numModes^2 + numModes, 1)
             self.ckx = (2*pi) * [gxAll; gSin];
             self.cky = (2*pi) * [gyAll; zeros(size(gSin))];
             self.cn = [nAll; nSin];
             self.cAmplitude = [amplitudeAll; amplitudeSin];
-            self.cCov = self.cAmplitude .^ 2;
 
             % all shape (numModes^2, 1)
             self.dkx = (2*pi) * gxAll;
             self.dky = (2*pi) * gyAll;
             self.dn = nAll;
             self.dAmplitude = amplitudeAll;
-            self.dCov = self.dAmplitude .^ 2;
-
-            self.cov = zeros(self.basisDimension(), self.basisDimension());
-            self.cov(1:length(self.akx), 1:length(self.akx)) = diag(self.aCov);
-            start = length(self.akx) + 1;
-            self.cov(start : start + length(self.bkx) - 1, start : start + length(self.bkx) - 1) = diag(self.bCov);
-            start = start + length(self.bkx);
-            self.cov(start : start + length(self.ckx) - 1, start : start + length(self.ckx) - 1) = diag(self.cCov);
-            start = start + length(self.ckx);
-            self.cov(start:end, start:end) = diag(self.dCov);
         end
 
         function kx = kx(self)
@@ -150,7 +131,7 @@ classdef GRF2DON
         end
 
         function v = totalVariance(self)
-            v = sum(self.amplitudeFn(self.gx(), self.gy()) .^ 2);
+            v = sum(self.aAmplitude.^2) + sum(self.bAmplitude.^2) + sum(self.cAmplitude.^2) + sum(self.dAmplitude.^2);
         end
 
         function f = generate(self, rngStream)
